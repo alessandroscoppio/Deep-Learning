@@ -6,7 +6,7 @@ df = pd.read_csv('https://archive.ics.uci.edu/ml/machine-learning-databases/iris
 
 dataset = pre.minmax_scale(df.head(100)[[0, 2]])
 CHECK = dataset[0]
-print(CHECK)
+print(df)
 print(df.get_value(0, 0))
 
 
