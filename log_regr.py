@@ -46,17 +46,31 @@ class LogisticRegression:
 
         input_size = input.shape
 
-        input_layer = np.zeros(input_size)
+        self.input_layer = np.zeros(input_size)
 
-        input_weights = np.random.uniform(0, 0.2, input_size)
+        self.input_weights = np.random.uniform(0, 0.2, input_size)
 
-        z = np.multiply(input_layer, input_weights)
 
+
+    def forward(self):
+
+        z = np.multiply(self.input_layer, self.input_weights)
         prediction = sigmoid(z)
 
-    def execute(self):
-        pass
+        return prediction
 
+    def gradient_descend(self):
+        self.input_weights = self.input_weights - self.learning_rate * 
+
+    def cost_function(self, prediction, real_label):
+
+        if real_label == 1:
+            cost = - np.log(prediction)
+
+        elif real_label == 0:
+            cost = - np.log(1 - prediction)
+
+        return cost
 
 if __name__ == "__main__":
     # Retrieve Dataset
@@ -73,4 +87,4 @@ if __name__ == "__main__":
                                              features_combination=features_combination,
                                              learning_rate=learning_rate,
                                              regularization_term=regularization_term)
-    logistic_regression.execute()
+    logistic_regression.forward()
