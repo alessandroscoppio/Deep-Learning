@@ -54,7 +54,7 @@ def normalize_dataset(training_set):
 
 class LogisticRegression:
 
-    def __init__(self, training_set, output_set, features_combination, learning_rate=0.9, regularization_term=0.7):
+    def __init__(self, training_set, output_set, learning_rate, regularization_term):
         self.training_set = training_set
         self.output_set = output_set
         self.learning_rate = learning_rate
@@ -69,22 +69,27 @@ class LogisticRegression:
 
         self.input_weights = np.random.uniform(0, 0.2, input_size[1]+1)
 
-    def train_network(self):
-        prediction = self.forward()
-        # Compare with output_set 
+    def train_network(self, epochs):
+        for epoch in range(epochs):
+            epoch_error = 0
+            for row_idx in range(len(self.training_set)):
+                prediction = self.forward(self.training_set[row_idx])
+                error = self.cost_function(prediction, self.output_set[row_idx])
+                epoch_error += error
+                self.backpropagate()
+                self.update_weights()
 
-    def forward(self):
-        z = np.dot(self.input_layer, self.input_weights)
+            print("Epoch: {0}, Error: {1}".format(epoch, epoch_error))
+
+    def forward(self, input_data):
+        # TODO Check if this append is correct. We did that on ARS. 1 is the bias node
+        z = np.dot(np.append(input_data, 1), self.input_weights)
         prediction = sigmoid(z)
 
         return prediction
 
-    def gradient_descend(self):
-        # self.input_weights = self.input_weights - self.learning_rate *
-        pass
-
     def cost_function(self, prediction, real_label):
-
+        cost = float('inf')
         if real_label == 1:
             cost = - np.log(prediction)
 
@@ -93,18 +98,31 @@ class LogisticRegression:
 
         return cost
 
+    def gradient_descend(self):
+        # self.input_weights = self.input_weights - self.learning_rate *
+        pass
+
+    def backpropagate(self):
+        pass
+
+    def update_weights(self):
+        # Update the weights based on the learning rate
+        pass
+
 
 if __name__ == "__main__":
     # Retrieve Dataset
     dataset = pd.read_csv('https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data',
                           header=None).values
+
     # Specify dataset parameters
     features_combination = [0, 2]
     class_index = 4
+    training_data_size = 100
 
     # Prepare dataset
     training_set, output_set = prepare_dataset(dataset,
-                                               training_data_size=100,
+                                               training_data_size=training_data_size,
                                                features_combination=features_combination,
                                                class_index=class_index)
     # Normalize dataset
@@ -119,4 +137,5 @@ if __name__ == "__main__":
                                              output_set=output_set,
                                              learning_rate=learning_rate,
                                              regularization_term=regularization_term)
-    logistic_regression.train_network()
+
+    logistic_regression.train_network(epochs=2000)
