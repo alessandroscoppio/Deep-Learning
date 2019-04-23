@@ -12,6 +12,11 @@ def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
 
+def sigmoid_derivate(z):
+    sig = sigmoid(z)
+    return sig * (1 - sig)
+
+
 def replace_class_on_dataset(dataset):
     class_mapping = {}
     unique_count = 0
@@ -39,10 +44,13 @@ class LogisticRegression:
         self.dataset = replace_class_on_dataset(self.dataset)
 
         # Create training set by selecting rows and columns and copying
-        self.training_set = self.dataset.copy()
+        self.training_set = self.dataset[:, features_combination].copy()
 
-        # Normalize using minmax scaling
+        # Normalize using min-max scaling
         self.training_set = pre.minmax_scale(self.training_set)
+
+        self.learning_rate = learning_rate
+        self.regularization_term = regularization_term
 
         input_size = input.shape
 
@@ -50,17 +58,16 @@ class LogisticRegression:
 
         self.input_weights = np.random.uniform(0, 0.2, input_size)
 
-
-
     def forward(self):
 
-        z = np.multiply(self.input_layer, self.input_weights)
+        z = np.dot(self.input_layer, self.input_weights)
         prediction = sigmoid(z)
 
         return prediction
 
     def gradient_descend(self):
-        self.input_weights = self.input_weights - self.learning_rate * 
+        # self.input_weights = self.input_weights - self.learning_rate *
+        pass
 
     def cost_function(self, prediction, real_label):
 
@@ -71,6 +78,7 @@ class LogisticRegression:
             cost = - np.log(1 - prediction)
 
         return cost
+
 
 if __name__ == "__main__":
     # Retrieve Dataset
