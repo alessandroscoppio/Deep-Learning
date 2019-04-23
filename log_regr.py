@@ -15,6 +15,7 @@ def sigmoid(x):
     # except AttributeError:
     #     print("SHIT!")
 
+
 def sigmoid_derivate(z):
     sig = sigmoid(z)
     return sig * (1 - sig)
@@ -95,7 +96,7 @@ class LogisticRegression:
         sum_errors = 0
         for idx, pred in enumerate(prediction):
             if self.labels[idx] == 1:
-                cost = - pred * np.log(pred)
+                cost = - pred * np.log(pred + 0.000005)
 
             elif self.labels[idx] == 0:
                 cost = - (1 - pred) * np.log(1 - pred + 0.000005)
@@ -141,7 +142,6 @@ if __name__ == "__main__":
             row[4] = 0.0
         elif row[4] == 'Iris-versicolor':
             row[4] = 1.0
-
 
     # # Specify dataset parameters
     # features_combination = [0, 2]
