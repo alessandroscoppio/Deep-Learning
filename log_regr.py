@@ -52,11 +52,14 @@ class LogisticRegression:
         self.learning_rate = learning_rate
         self.regularization_term = regularization_term
 
-        input_size = input.shape
+        input_size = self.training_set.shape
 
-        self.input_layer = np.zeros(input_size)
+        input_layer = np.zeros(input_size)
 
-        self.input_weights = np.random.uniform(0, 0.2, input_size)
+        # Add bias
+        self.input_layer = np.c_[np.ones(input_size[0]), input_layer]
+
+        self.input_weights = np.random.uniform(0, 0.2, input_size[1]+1)
 
     def forward(self):
 
@@ -87,7 +90,7 @@ if __name__ == "__main__":
     # Specify parameters
     features_combination = [0, 2, 4]  # 4 is class
     learning_rate = 0.9
-    regularization_term = 0.7
+    regularization_term = 0
 
     # Initiate Model
     logistic_regression = LogisticRegression(dataset,
