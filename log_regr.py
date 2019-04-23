@@ -10,8 +10,10 @@ import scipy.io
 
 
 def sigmoid(x):
+    # try:
     return 1 / (1 + np.exp(-x))
-
+    # except AttributeError:
+    #     print("SHIT!")
 
 def sigmoid_derivate(z):
     sig = sigmoid(z)
@@ -62,60 +64,58 @@ def normalize_dataset(training_set):
 
 class LogisticRegression:
 
-    def __init__(self, training_set, output_set, learning_rate, regularization_term):
+    def __init__(self, training_set, labels, learning_rate, regularization_term):
         self.training_set = training_set
-        self.output_set = output_set
+        self.labels = labels
         self.learning_rate = learning_rate
         self.regularization_term = regularization_term
 
         input_size = self.training_set.shape
 
-        input_layer = np.zeros(input_size)
-
         # Add bias
-        self.input_layer = np.c_[np.ones(input_size[0]), input_layer]
+        self.input_layer = np.c_[np.ones(input_size[0]), training_set]
 
-        self.input_weights = np.random.uniform(0, 0.2, input_size[1]+1)
+        self.input_weights = np.random.uniform(0, 0.2, input_size[1] + 1)
 
     def train_network(self, epochs):
         for epoch in range(epochs):
-            epoch_error = 0
-            for row_idx in range(len(self.training_set)):
-                prediction = self.forward(self.training_set[row_idx])
-                error = self.cost_function(prediction, self.output_set[row_idx])
-                epoch_error += error
-                self.backpropagate()
-                self.update_weights()
+            predictions = self.forward()
+            cost = self.cost_function(predictions)
+            self.backpropagate(predictions)
+            self.gradient_descend()
 
-            print("Epoch: {0}, Error: {1}".format(epoch, epoch_error))
+            print("Epoch: {0}, Error: {1}".format(epoch, cost))
 
-    def forward(self, input_data):
+    def forward(self):
         # TODO Check if this append is correct. We did that on ARS. 1 is the bias node
-        z = np.dot(np.append(input_data, 1), self.input_weights)
-        prediction = sigmoid(z)
+        self.z = np.dot(self.input_layer, self.input_weights)
+        prediction = sigmoid(self.z)
 
         return prediction
 
-    def cost_function(self, prediction, real_label):
-        cost = float('inf')
-        if real_label == 1:
-            cost = - np.log(prediction)
+    def cost_function(self, prediction):
+        cost = 0
+        sum_errors = 0
+        for idx, pred in enumerate(prediction):
+            if self.labels[idx] == 1:
+                cost = - np.log(pred)
 
-        elif real_label == 0:
-            cost = - np.log(1 - prediction)
+            elif self.labels[idx] == 0:
+                cost = - np.log(1 - pred)
+            sum_errors += cost
+        return sum_errors
 
-        return cost
+    def backpropagate(self, predictions):
+        # gradient = np.dot(np.dot(self.labels, (1 / predictions)) - np.dot(1 - self.labels, 1 / (1 - predictions)),
+        #                   sigmoid_derivate(self.z))
+        # self.gradients = np.ones_like(self.input_weights)
+        self.gradients = np.dot((self.labels - predictions), self.input_layer)
 
     def gradient_descend(self):
-        # self.input_weights = self.input_weights - self.learning_rate *
-        pass
-
-    def backpropagate(self):
-        pass
-
-    def update_weights(self):
         # Update the weights based on the learning rate
-        pass
+        # for weight in range(len(self.input_weights)):
+        #     self.input_weights[weight] = self.input_weights[weight] - self.learning_rate * self.gradients[weight]
+        self.input_weights = self.input_weights - self.learning_rate * self.gradients
 
 
 if __name__ == "__main__":
@@ -126,7 +126,7 @@ if __name__ == "__main__":
     # Specify dataset parameters
     features_combination = [0, 2]
     class_index = 4
-    training_data_size = 100
+    training_data_size = 80
 
     # Prepare dataset
     training_set, output_set = prepare_dataset(dataset,
@@ -143,7 +143,7 @@ if __name__ == "__main__":
 
     # Initiate Model
     logistic_regression = LogisticRegression(training_set=training_set,
-                                             output_set=output_set,
+                                             labels=output_set,
                                              learning_rate=learning_rate,
                                              regularization_term=regularization_term)
 
