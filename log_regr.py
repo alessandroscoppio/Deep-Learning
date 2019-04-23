@@ -82,19 +82,10 @@ class LogisticRegression:
         # No bias
         self.input_weights = np.random.uniform(0, 0.2, input_size[1])
 
-    def train_network(self, epochs):
-        for epoch in range(epochs):
-            predictions = self.forward()
-            cost = self.cost_function(predictions)
-            self.backpropagate(predictions)
-            self.gradient_descend()
-
-            print("Epoch: {0}, Cost: {1}".format(epoch, cost))
-
-    def forward(self):
-        np.random.shuffle(self.input_layer)
-        self.z = np.zeros(self.input_layer.shape)
-        self.z = np.dot(self.input_layer, self.input_weights)
+    def forward(self, input):
+        np.random.shuffle(input)
+        self.z = np.zeros(input.shape)
+        self.z = np.dot(input, self.input_weights)
         prediction = np.array(sigmoid(self.z), dtype=float)
 
         return prediction
@@ -125,34 +116,71 @@ class LogisticRegression:
         #     self.input_weights[weight] = self.input_weights[weight] - self.learning_rate * self.gradients[weight]
         self.input_weights = self.input_weights - (self.learning_rate * self.gradients)
 
+    def train_network(self, epochs):
+        for epoch in range(epochs):
+            predictions = self.forward(self.input_layer)
+            cost = self.cost_function(predictions)
+            self.backpropagate(predictions)
+            self.gradient_descend()
+
+            print("Epoch: {0}, Cost: {1}".format(epoch, cost))
+
+    def test_network(self, test_set):
+        return self.forward(test_set)
+
 
 if __name__ == "__main__":
+    # For repeatability
+    np.random.seed(12)
     # Retrieve Dataset
     dataset = pd.read_csv('https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data',
                           header=None).values
 
-    # Specify dataset parameters
+    for row in dataset:
+        if row[4] == 'Iris-setosa':
+            row[4] = 0.0
+        elif row[4] == 'Iris-versicolor':
+            row[4] = 1.0
+
+
+    # # Specify dataset parameters
+    # features_combination = [0, 2]
+    # class_index = 4
+    # training_data_size = 100
+    #
+    # # Prepare dataset
+    # training_set, output_set = prepare_dataset(dataset,
+    #                                            training_data_size=training_data_size,
+    #                                            features_combination=features_combination,
+    #                                            class_index=class_index)
+
     features_combination = [0, 2]
-    class_index = 4
-    training_data_size = 80
 
-    # Prepare dataset
-    training_set, output_set = prepare_dataset(dataset,
-                                               training_data_size=training_data_size,
-                                               features_combination=features_combination,
-                                               class_index=class_index)
     # Normalize dataset
-    training_set = normalize_dataset(training_set)
-    # plot(training_set, output_set)
+    dataset = dataset[:100]
+    np.random.shuffle(dataset)
 
+    labels = dataset[:, -1].astype(np.float64)
+
+    norm_dataset = normalize_dataset(dataset[:, features_combination])
+
+    training_set = norm_dataset[:80]
+    training_labels = labels[:80]
+    test_set = norm_dataset[-20:]
+    test_labels = labels[-20:]
     # Specify training parameters
-    learning_rate = 0.9
+    learning_rate = 0.4
     regularization_term = 0
 
     # Initiate Model
     logistic_regression = LogisticRegression(training_set=training_set,
-                                             labels=output_set,
+                                             labels=training_labels,
                                              learning_rate=learning_rate,
                                              regularization_term=regularization_term)
 
-    logistic_regression.train_network(epochs=1000)
+    logistic_regression.train_network(epochs=250)
+
+    test_pred = logistic_regression.test_network(test_set)
+
+    p = np.c_[test_labels, test_pred]
+    print(p)
