@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn import preprocessing as pre
+import matplotlib.pyplot as plt
 import scipy.io
 
 
@@ -45,6 +46,13 @@ def prepare_dataset(dataset, training_data_size, features_combination, class_ind
     output_set = dataset[:, class_index].copy()
 
     return training_set, output_set
+
+
+def plot(data, output):
+    colors = output
+    plt.scatter(data[:, 0], data[:, 1], c=colors, cmap='viridis')
+    plt.colorbar()
+    plt.show()
 
 
 def normalize_dataset(training_set):
@@ -127,6 +135,7 @@ if __name__ == "__main__":
                                                class_index=class_index)
     # Normalize dataset
     training_set = normalize_dataset(training_set)
+    plot(training_set, output_set)
 
     # Specify training parameters
     learning_rate = 0.9
