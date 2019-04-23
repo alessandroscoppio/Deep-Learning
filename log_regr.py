@@ -40,6 +40,7 @@ def prepare_dataset(dataset, training_data_size, features_combination, class_ind
 
     # Replace classes on the last column with number
     dataset = replace_class_on_dataset(dataset, class_index)
+    dataset = dataset.astype(np.float64)
 
     # Create training set by selecting rows and columns and copying
     training_set = dataset[:, features_combination].copy()
@@ -73,9 +74,13 @@ class LogisticRegression:
         input_size = self.training_set.shape
 
         # Add bias
-        self.input_layer = np.c_[np.ones(input_size[0]), training_set]
+        # self.input_layer = np.c_[np.ones(input_size[0]), training_set]
+        # No bias
+        self.input_layer = training_set
 
-        self.input_weights = np.random.uniform(0, 0.2, input_size[1] + 1)
+        # self.input_weights = np.random.uniform(0, 0.2, input_size[1] + 1)
+        # No bias
+        self.input_weights = np.random.uniform(0, 0.2, input_size[1])
 
     def train_network(self, epochs):
         for epoch in range(epochs):
@@ -84,12 +89,13 @@ class LogisticRegression:
             self.backpropagate(predictions)
             self.gradient_descend()
 
-            print("Epoch: {0}, Error: {1}".format(epoch, cost))
+            print("Epoch: {0}, Cost: {1}".format(epoch, cost))
 
     def forward(self):
-        # TODO Check if this append is correct. We did that on ARS. 1 is the bias node
+        np.random.shuffle(self.input_layer)
+        self.z = np.zeros(self.input_layer.shape)
         self.z = np.dot(self.input_layer, self.input_weights)
-        prediction = sigmoid(self.z)
+        prediction = np.array(sigmoid(self.z), dtype=float)
 
         return prediction
 
@@ -98,24 +104,26 @@ class LogisticRegression:
         sum_errors = 0
         for idx, pred in enumerate(prediction):
             if self.labels[idx] == 1:
-                cost = - np.log(pred)
+                cost = - pred * np.log(pred)
 
             elif self.labels[idx] == 0:
-                cost = - np.log(1 - pred)
+                cost = - (1 - pred) * np.log(1 - pred + 0.000005)
             sum_errors += cost
+        # return sum_errors / len(prediction)
         return sum_errors
 
     def backpropagate(self, predictions):
         # gradient = np.dot(np.dot(self.labels, (1 / predictions)) - np.dot(1 - self.labels, 1 / (1 - predictions)),
         #                   sigmoid_derivate(self.z))
         # self.gradients = np.ones_like(self.input_weights)
+        self.gradients = np.zeros(self.input_weights.shape)
         self.gradients = np.dot((self.labels - predictions), self.input_layer)
 
     def gradient_descend(self):
         # Update the weights based on the learning rate
         # for weight in range(len(self.input_weights)):
         #     self.input_weights[weight] = self.input_weights[weight] - self.learning_rate * self.gradients[weight]
-        self.input_weights = self.input_weights - self.learning_rate * self.gradients
+        self.input_weights = self.input_weights - (self.learning_rate * self.gradients)
 
 
 if __name__ == "__main__":
@@ -135,7 +143,7 @@ if __name__ == "__main__":
                                                class_index=class_index)
     # Normalize dataset
     training_set = normalize_dataset(training_set)
-    plot(training_set, output_set)
+    # plot(training_set, output_set)
 
     # Specify training parameters
     learning_rate = 0.9
@@ -147,4 +155,4 @@ if __name__ == "__main__":
                                              learning_rate=learning_rate,
                                              regularization_term=regularization_term)
 
-    logistic_regression.train_network(epochs=2000)
+    logistic_regression.train_network(epochs=1000)
