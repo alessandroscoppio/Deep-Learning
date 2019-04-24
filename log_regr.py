@@ -84,7 +84,7 @@ class LogisticRegression:
         self.input_weights = np.random.uniform(0, 0.2, input_size[1])
 
     def forward(self, input):
-        np.random.shuffle(input)
+        # np.random.shuffle(input)
         self.z = np.zeros(input.shape)
         self.z = np.dot(input, self.input_weights)
         prediction = np.array(sigmoid(self.z), dtype=float)
@@ -108,14 +108,15 @@ class LogisticRegression:
 
         self.gradients = np.zeros(self.input_weights.shape[0])
 
-        gradient_cost_predict = np.divide(self.labels, predictions) - np.divide((1 - self.labels), (1 - predictions))
-        gradient_predict_weight = np.dot(sigmoid_derivate(self.z), self.input_layer)
-        gradient_cost_weight = np.dot(gradient_cost_predict, gradient_predict_weight)
+        # gradient_cost_predict = np.divide(self.labels, predictions) - np.divide((1 - self.labels), (1 - predictions))
+        # gradient_predict_weight = np.dot(sigmoid_derivate(self.z), self.input_layer)
+        # gradient_cost_weight = np.dot(gradient_cost_predict, gradient_predict_weight)
+        #
+        # self.gradients = gradient_cost_weight
 
-        self.gradients = gradient_cost_weight
-
-        # for idx in range(self.input_weights.shape[0]):
-        #     self.gradients[idx] = (self.labels - predictions) * self.input_layer[:, idx]
+        for idx in range(self.input_weights.shape[0]):
+            # self.gradients[idx] = np.dot((self.labels - predictions), self.input_layer[:, idx])
+            self.gradients[idx] = np.dot((predictions - self.labels), self.input_layer[:, idx])
 
         # self.gradients = (self.labels - predictions) * self.input_layer
 
@@ -197,7 +198,7 @@ if __name__ == "__main__":
                                              learning_rate=learning_rate,
                                              regularization_term=regularization_term)
 
-    logistic_regression.train_network(epochs=250000)
+    logistic_regression.train_network(epochs=100000)
 
     test_pred = logistic_regression.test_network(test_set)
 
