@@ -8,7 +8,6 @@ import scipy.io
 # mat = scipy.io.loadmat('monk2.mat')
 # print(mat)
 
-
 def sigmoid(x):
     try:
         return 1 / (1 + np.exp(-x))
@@ -52,10 +51,19 @@ def prepare_dataset(dataset, training_data_size, features_combination, class_ind
     return training_set, output_set
 
 
-def plot(data, output):
-    colors = output
-    plt.scatter(data[:, 0], data[:, 1], c=colors, cmap='viridis')
-    plt.colorbar()
+def plot_decision_boundary(X,y, pred_func):
+    # Set min and max values and give it some padding
+    x_min, x_max = X[:, 0].min() - .5, X[:, 0].max() + .5
+    y_min, y_max = X[:, 1].min() - .5, X[:, 1].max() + .5
+    h = 0.01
+    # Generate a grid of points with distance h between them
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+    # Predict the function value for the whole gid
+    Z = pred_func(np.c_[xx.ravel(), yy.ravel()])
+    Z = Z.reshape(xx.shape)
+    # Plot the contour and training examples
+    plt.contourf(xx, yy, Z, cmap=plt.cm.Spectral)
+    plt.scatter(X[:, 0], X[:, 1], c=y, cmap=plt.cm.Spectral)
     plt.show()
 
 
@@ -145,6 +153,8 @@ class LogisticRegression:
                 return
 
             print("Epoch: {0}, Cost: {1}".format(epoch, cost))
+            if not epoch % 20:
+                plot_decision_boundary(training_set, training_labels, logistic_regression.test_network)
 
     def test_network(self, test_set):
         return self.forward(test_set)
