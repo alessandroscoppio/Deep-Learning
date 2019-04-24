@@ -89,7 +89,7 @@ class LogisticRegression:
 
         # self.input_weights = np.random.uniform(0, 0.2, input_size[1] + 1)
         # No bias
-        self.input_weights = np.random.uniform(0, 0.2, input_size[1])
+        self.input_weights = np.random.uniform(0, 0.4, input_size[1])
 
     def forward(self, input):
         # np.random.shuffle(input)
@@ -104,13 +104,13 @@ class LogisticRegression:
         sum_errors = 0
         for idx, pred in enumerate(prediction):
             if self.labels[idx] == 1:
-                cost = - pred * np.log(pred + 1e-13)
+                cost = - self.labels[idx] * np.log(pred + 1e-13)
 
             elif self.labels[idx] == 0:
-                cost = - (1 - pred) * np.log(1 - pred + 1e-13)
+                cost = - (1 - self.labels[idx]) * np.log(1 - pred + 1e-13)
             sum_errors += cost
-        # return sum_errors / len(prediction)
-        return sum_errors
+        return sum_errors / len(prediction)
+        # return sum_errors
 
     def backpropagation(self, predictions):
 
@@ -145,6 +145,7 @@ class LogisticRegression:
         for epoch in range(epochs):
             predictions = self.forward(self.input_layer)
             cost = self.cost_function(predictions)
+
             self.backpropagation(predictions)
             self.gradient_descend()
 
@@ -153,8 +154,8 @@ class LogisticRegression:
                 return
 
             print("Epoch: {0}, Cost: {1}".format(epoch, cost))
-            if not epoch % 20:
-                plot_decision_boundary(training_set, training_labels, logistic_regression.test_network)
+            # if not epoch % 1000:
+            #     plot_decision_boundary(training_set, training_labels, logistic_regression.test_network)
 
     def test_network(self, test_set):
         return self.forward(test_set)
@@ -199,7 +200,7 @@ if __name__ == "__main__":
     test_set = norm_dataset[-20:]
     test_labels = labels[-20:]
     # Specify training parameters
-    learning_rate = 0.1
+    learning_rate = 0.05
     regularization_term = 0
 
     # Initiate Model
@@ -211,6 +212,7 @@ if __name__ == "__main__":
     logistic_regression.train_network(epochs=100000)
 
     test_pred = logistic_regression.test_network(test_set)
+    plot_decision_boundary(training_set, training_labels, logistic_regression.test_network)
 
     p = np.c_[test_labels, test_pred.round()]
     print(p)
