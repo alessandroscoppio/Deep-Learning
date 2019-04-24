@@ -124,7 +124,7 @@ class LogisticRegression:
         # gradient_cost_weight = np.dot(gradient_cost_predict, gradient_predict_weight)
 
         for idx in range(len(self.input_weights)):
-            self.gradients[idx] = (label - prediction) * input[idx]
+            self.gradients[idx] = (prediction - label) * input[idx]
 
 
             #     gradient_cost_predict = self.labels[idx] / prediction[idx] - (1 - self.labels[idx]) / (1 - prediction[idx])
@@ -144,8 +144,10 @@ class LogisticRegression:
         # for weight in range(len(self.input_weights)):
         #     self.input_weights[weight] = self.input_weights[weight] - self.learning_rate * self.gradients[weight]
 
-        for idx in range(len(self.gradients)):
-            self.input_weights[idx] = self.input_weights[idx] - (self.learning_rate * self.gradients[idx])
+        # for idx in range(len(self.gradients)):
+        #     self.input_weights[idx] = self.input_weights[idx] - (self.learning_rate * self.gradients[idx])
+
+            self.input_weights = self.input_weights - self.learning_rate * self.gradients
 
         # Try! Normalize weights each iter
         # self.input_weights = self.input_weights / max(self.input_weights)
