@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn import preprocessing as pre
+from sklearn import base
 import matplotlib.pyplot as plt
 import scipy.io
 
@@ -51,10 +52,10 @@ def prepare_dataset(dataset, training_data_size, features_combination, class_ind
     return training_set, output_set
 
 
-def plot_decision_boundary(X,y, pred_func):
+def plot_decision_boundary(X, y, pred_func):
     # Set min and max values and give it some padding
-    x_min, x_max = X[:, 0].min() - .5, X[:, 0].max() + .5
-    y_min, y_max = X[:, 1].min() - .5, X[:, 1].max() + .5
+    x_min, x_max = X[:, 0].min() - .1, X[:, 0].max() + .1
+    y_min, y_max = X[:, 1].min() - .1, X[:, 1].max() + .1
     h = 0.01
     # Generate a grid of points with distance h between them
     xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
@@ -65,6 +66,21 @@ def plot_decision_boundary(X,y, pred_func):
     plt.contourf(xx, yy, Z, cmap=plt.cm.Spectral)
     plt.scatter(X[:, 0], X[:, 1], c=y, cmap=plt.cm.Spectral)
     plt.show()
+
+
+def plot_cost_history(learning_rates, cost_history):
+    for i in range(len(learning_rates)):
+        plt.plot(range(len(cost_history[i])), cost_history[i], label="lr {0}".format(learning_rates[i]))
+    plt.legend()
+    plt.show()
+
+
+def get_accuracy(test_labels, test_pred):
+    success = 0
+    for i in range(len(test_labels)):
+        if test_labels[i] == test_pred[i].round():
+            success += 1
+    return success / len(test_labels)
 
 
 def normalize_dataset(training_set):
@@ -79,6 +95,8 @@ class LogisticRegression:
         self.labels = labels
         self.learning_rate = learning_rate
         self.regularization_term = regularization_term
+
+        self.cost_history = []
 
         input_size = self.training_set.shape
 
@@ -128,7 +146,6 @@ class LogisticRegression:
 
         # self.gradients = (self.labels - predictions) * self.input_layer
 
-
         # self.gradients = np.dot((self.labels - predictions), self.input_layer) / len(self.labels)
         # self.gradients = np.dot((self.labels - predictions), self.input_layer)
 
@@ -145,12 +162,12 @@ class LogisticRegression:
         for epoch in range(epochs):
             predictions = self.forward(self.input_layer)
             cost = self.cost_function(predictions)
-
+            self.cost_history.append(cost)
             self.backpropagation(predictions)
             self.gradient_descend()
 
             if np.abs(cost) < 0.02:
-                print("Convergence reached by treshold")
+                print("Convergence reached by threshold")
                 return
 
             print("Epoch: {0}, Cost: {1}".format(epoch, cost))
@@ -161,12 +178,28 @@ class LogisticRegression:
         return self.forward(test_set)
 
 
+def learning_rate_experiments():
+    learning_rate = [0.02, 0.04, 0.06, 0.08, 0.1]
+    cost_history_per_lr = []
+    for lr in learning_rate:
+        logistic_regression = LogisticRegression(training_set=training_set,
+                                                 labels=training_labels,
+                                                 learning_rate=lr,
+                                                 regularization_term=regularization_term)
+
+        logistic_regression.train_network(epochs=300)
+        cost_history_per_lr.append(logistic_regression.cost_history)
+    plot_cost_history(learning_rate, cost_history_per_lr)
+
+
 if __name__ == "__main__":
     # For repeatability
     np.random.seed(12)
     # Retrieve Dataset
-    dataset = pd.read_csv('https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data',
+    dataset = pd.read_csv('../iris.data',
                           header=None).values
+
+    monk2 = scipy.io.loadmat('monk2.mat')['monk2']
 
     for row in dataset:
         if row[4] == 'Iris-setosa':
@@ -203,16 +236,22 @@ if __name__ == "__main__":
     learning_rate = 0.05
     regularization_term = 0
 
+    # Monk database
+    # training_set = normalize_dataset(monk2[:345, [0, 1]])
+    # training_labels = monk2[:345, -1]
+    # test_set = monk2[345:, [0, 1]]
+    # test_labels = monk2[345:, -1]
+
+    # learning_rate_experiments()
     # Initiate Model
     logistic_regression = LogisticRegression(training_set=training_set,
                                              labels=training_labels,
                                              learning_rate=learning_rate,
                                              regularization_term=regularization_term)
 
-    logistic_regression.train_network(epochs=100000)
-
+    logistic_regression.train_network(epochs=10000)
     test_pred = logistic_regression.test_network(test_set)
-    plot_decision_boundary(training_set, training_labels, logistic_regression.test_network)
+    print("Prediction Accuracy {0}%".format(get_accuracy(test_labels, test_pred) * 100))
 
-    p = np.c_[test_labels, test_pred.round()]
-    print(p)
+
+    plot_decision_boundary(training_set, training_labels, logistic_regression.test_network)
