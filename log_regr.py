@@ -86,58 +86,78 @@ class LogisticRegression:
     def forward(self, input):
         np.random.shuffle(input)
         self.z = np.zeros(input.shape)
-        self.z = np.dot(input, self.input_weights)
-        prediction = np.array(sigmoid(self.z), dtype=float)
+        # for idx in range(self.input_weights.shape[0]):
+        self.z = np.sum(self.input_weights * input)
+
+        prediction = sigmoid(self.z)
+        # prediction = np.array(sigmoid(self.z), dtype=float)
+        # self.z = np.dot(input, self.input_weights)
+        # prediction = np.array(sigmoid(self.z), dtype=float)
 
         return prediction
 
-    def cost_function(self, prediction):
+    def cost_function(self, label, prediction):
         cost = 0
         sum_errors = 0
-        for idx, pred in enumerate(prediction):
-            if self.labels[idx] == 1:
-                cost = - pred * np.log(pred + 1e-13)
 
-            elif self.labels[idx] == 0:
-                cost = - (1 - pred) * np.log(1 - pred + 1e-13)
-            sum_errors += cost
-        # return sum_errors / len(prediction)
-        return sum_errors
+        prediction = 1 - 1e-13 if prediction == 1 else prediction
+        prediction = 1e-13 if prediction == 0 else prediction
 
-    def backpropagation(self, predictions):
+        return label * np.log(prediction) - (1 - label) * np.log(1 - prediction)
+
+        # for idx, pred in enumerate(prediction):
+        #     if self.labels[idx] == 1:
+        #         cost = - pred * np.log(pred + 1e-13)
+        #
+        #     elif self.labels[idx] == 0:
+        #         cost = - (1 - pred) * np.log(1 - pred + 1e-13)
+        #     sum_errors += cost
+        # # return sum_errors / len(prediction)
+        # return sum_errors
+
+    def backpropagation(self, input, label, prediction):
 
         self.gradients = np.zeros(self.input_weights.shape[0])
 
-        gradient_cost_predict = np.divide(self.labels, predictions) - np.divide((1 - self.labels), (1 - predictions))
-        gradient_predict_weight = np.dot(sigmoid_derivate(self.z), self.input_layer)
-        gradient_cost_weight = np.dot(gradient_cost_predict, gradient_predict_weight)
+        # gradient_cost_predict = np.divide(self.labels, predictions) - np.divide((1 - self.labels), (1 - predictions))
+        # gradient_predict_weight = np.dot(sigmoid_derivate(self.z), self.input_layer)
+        # gradient_cost_weight = np.dot(gradient_cost_predict, gradient_predict_weight)
 
-        self.gradients = gradient_cost_weight
-
-        # for idx in range(self.input_weights.shape[0]):
-        #     self.gradients[idx] = (self.labels - predictions) * self.input_layer[:, idx]
-
-        # self.gradients = (self.labels - predictions) * self.input_layer
+        for idx in range(len(self.input_weights)):
+            self.gradients[idx] = (label - prediction) * input[idx]
 
 
-        # self.gradients = np.dot((self.labels - predictions), self.input_layer) / len(self.labels)
-        # self.gradients = np.dot((self.labels - predictions), self.input_layer)
+            #     gradient_cost_predict = self.labels[idx] / prediction[idx] - (1 - self.labels[idx]) / (1 - prediction[idx])
+            #     gradient_predict_weight = sigmoid_derivate(self.z[idx]) * self.input_layer[idx]
+            #     self.gradients[idx] = gradient_cost_predict * gradient_predict_weight
+
+            # for idx in range(self.input_weights.shape[0]):
+            #     self.gradients[idx] = (self.labels - predictions) * self.input_layer[:, idx]
+
+            # self.gradients = (self.labels - predictions) * self.input_layer
+
+            # self.gradients = np.dot((self.labels - predictions), self.input_layer) / len(self.labels)
+            # self.gradients = np.dot((self.labels - predictions), self.input_layer)
 
     def gradient_descend(self):
         # Update the weights based on the learning rate
         # for weight in range(len(self.input_weights)):
         #     self.input_weights[weight] = self.input_weights[weight] - self.learning_rate * self.gradients[weight]
-        self.input_weights = self.input_weights - (self.learning_rate * self.gradients)
+
+        for idx in range(len(self.gradients)):
+            self.input_weights[idx] = self.input_weights[idx] - (self.learning_rate * self.gradients[idx])
 
         # Try! Normalize weights each iter
         # self.input_weights = self.input_weights / max(self.input_weights)
 
     def train_network(self, epochs):
         for epoch in range(epochs):
-            predictions = self.forward(self.input_layer)
-            cost = self.cost_function(predictions)
-            self.backpropagation(predictions)
-            self.gradient_descend()
+            for idx in range(len(self.input_layer)):
+                input = self.input_layer[idx, :]
+                prediction = self.forward(input)
+                cost = self.cost_function(self.labels[idx], prediction)
+                self.backpropagation(input, self.labels[idx], prediction)
+                self.gradient_descend()
 
             if np.abs(cost) < 0.02:
                 print("Convergence reached by treshold")
@@ -145,8 +165,14 @@ class LogisticRegression:
 
             print("Epoch: {0}, Cost: {1}".format(epoch, cost))
 
-    def test_network(self, test_set):
-        return self.forward(test_set)
+    def test_network(self, test_set, threshold):
+        preds = []
+        for idx in range(len(test_set)):
+            if self.forward(test_set[idx]) > threshold: preds.append(1)
+            if self.forward(test_set[idx]) < threshold: preds.append(0)
+            # preds.append(self.forward(test_set[idx]))
+
+        return preds
 
 
 if __name__ == "__main__":
@@ -188,7 +214,7 @@ if __name__ == "__main__":
     test_set = norm_dataset[-20:]
     test_labels = labels[-20:]
     # Specify training parameters
-    learning_rate = 0.1
+    learning_rate = 0.05
     regularization_term = 0
 
     # Initiate Model
@@ -197,9 +223,9 @@ if __name__ == "__main__":
                                              learning_rate=learning_rate,
                                              regularization_term=regularization_term)
 
-    logistic_regression.train_network(epochs=250000)
+    logistic_regression.train_network(epochs=350)
 
-    test_pred = logistic_regression.test_network(test_set)
+    test_pred = logistic_regression.test_network(test_set, 0.5)
 
-    p = np.c_[test_labels, test_pred.round()]
+    p = np.c_[test_labels, test_pred]
     print(p)
