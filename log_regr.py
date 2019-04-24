@@ -10,10 +10,10 @@ import scipy.io
 
 
 def sigmoid(x):
-    # try:
-    return 1 / (1 + np.exp(-x))
-    # except AttributeError:
-    #     print("SHIT!")
+    try:
+        return 1 / (1 + np.exp(-x))
+    except OverflowError:
+        return 1e-13
 
 
 def sigmoid_derivate(z):
@@ -96,20 +96,32 @@ class LogisticRegression:
         sum_errors = 0
         for idx, pred in enumerate(prediction):
             if self.labels[idx] == 1:
-                cost = - pred * np.log(pred + 0.000005)
+                cost = - pred * np.log(pred + 1e-13)
 
             elif self.labels[idx] == 0:
-                cost = - (1 - pred) * np.log(1 - pred + 0.000005)
+                cost = - (1 - pred) * np.log(1 - pred + 1e-13)
             sum_errors += cost
         # return sum_errors / len(prediction)
         return sum_errors
 
-    def backpropagate(self, predictions):
-        # gradient = np.dot(np.dot(self.labels, (1 / predictions)) - np.dot(1 - self.labels, 1 / (1 - predictions)),
-        #                   sigmoid_derivate(self.z))
-        # self.gradients = np.ones_like(self.input_weights)
-        self.gradients = np.zeros(self.input_weights.shape)
-        self.gradients = np.dot((self.labels - predictions), self.input_layer)
+    def backpropagation(self, predictions):
+
+        self.gradients = np.zeros(self.input_weights.shape[0])
+
+        gradient_cost_predict = np.divide(self.labels, predictions) - np.divide((1 - self.labels), (1 - predictions))
+        gradient_predict_weight = np.dot(sigmoid_derivate(self.z), self.input_layer)
+        gradient_cost_weight = np.dot(gradient_cost_predict, gradient_predict_weight)
+
+        self.gradients = gradient_cost_weight
+
+        # for idx in range(self.input_weights.shape[0]):
+        #     self.gradients[idx] = (self.labels - predictions) * self.input_layer[:, idx]
+
+        # self.gradients = (self.labels - predictions) * self.input_layer
+
+
+        # self.gradients = np.dot((self.labels - predictions), self.input_layer) / len(self.labels)
+        # self.gradients = np.dot((self.labels - predictions), self.input_layer)
 
     def gradient_descend(self):
         # Update the weights based on the learning rate
@@ -117,12 +129,19 @@ class LogisticRegression:
         #     self.input_weights[weight] = self.input_weights[weight] - self.learning_rate * self.gradients[weight]
         self.input_weights = self.input_weights - (self.learning_rate * self.gradients)
 
+        # Try! Normalize weights each iter
+        # self.input_weights = self.input_weights / max(self.input_weights)
+
     def train_network(self, epochs):
         for epoch in range(epochs):
             predictions = self.forward(self.input_layer)
             cost = self.cost_function(predictions)
-            self.backpropagate(predictions)
+            self.backpropagation(predictions)
             self.gradient_descend()
+
+            if np.abs(cost) < 0.02:
+                print("Convergence reached by treshold")
+                return
 
             print("Epoch: {0}, Cost: {1}".format(epoch, cost))
 
@@ -169,7 +188,7 @@ if __name__ == "__main__":
     test_set = norm_dataset[-20:]
     test_labels = labels[-20:]
     # Specify training parameters
-    learning_rate = 0.4
+    learning_rate = 0.1
     regularization_term = 0
 
     # Initiate Model
@@ -178,9 +197,9 @@ if __name__ == "__main__":
                                              learning_rate=learning_rate,
                                              regularization_term=regularization_term)
 
-    logistic_regression.train_network(epochs=250)
+    logistic_regression.train_network(epochs=250000)
 
     test_pred = logistic_regression.test_network(test_set)
 
-    p = np.c_[test_labels, test_pred]
+    p = np.c_[test_labels, test_pred.round()]
     print(p)
