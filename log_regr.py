@@ -153,7 +153,7 @@ class LogisticRegression:
         # Update the weights based on the learning rate
         # for weight in range(len(self.input_weights)):
         #     self.input_weights[weight] = self.input_weights[weight] - self.learning_rate * self.gradients[weight]
-        self.input_weights = self.input_weights - (self.learning_rate * self.gradients)
+        self.input_weights = self.input_weights - (self.learning_rate * self.gradients) / self.input_layer.shape[0]
 
         # Try! Normalize weights each iter
         # self.input_weights = self.input_weights / max(self.input_weights)
@@ -166,7 +166,7 @@ class LogisticRegression:
             self.backpropagation(predictions)
             self.gradient_descend()
 
-            if np.abs(cost) < 0.02:
+            if np.abs(cost) < 1e-11:
                 print("Convergence reached by threshold")
                 return
 
@@ -178,8 +178,15 @@ class LogisticRegression:
         return self.forward(test_set)
 
 
+def plot_accuracy(accuracy_history, learning_rate):
+    plt.plot(accuracy_history, learning_rate)
+    plt.legend()
+    plt.show()
+
+
 def learning_rate_experiments():
-    learning_rate = [0.02, 0.04, 0.06, 0.08, 0.1]
+    learning_rate = [0.1, 0.3, 0.5, 0.7, 0.9]
+    accuracy_history = []
     cost_history_per_lr = []
     for lr in learning_rate:
         logistic_regression = LogisticRegression(training_set=training_set,
@@ -187,8 +194,13 @@ def learning_rate_experiments():
                                                  learning_rate=lr,
                                                  regularization_term=regularization_term)
 
-        logistic_regression.train_network(epochs=300)
+        logistic_regression.train_network(epochs=500)
         cost_history_per_lr.append(logistic_regression.cost_history)
+        test_pred = logistic_regression.test_network(test_set)
+        print(get_accuracy(test_labels, test_pred) * 100)
+        accuracy_history.append(get_accuracy(test_labels, test_pred) * 100)
+
+    # plot_accuracy(accuracy_history, learning_rate)
     plot_cost_history(learning_rate, cost_history_per_lr)
 
 
@@ -226,23 +238,23 @@ if __name__ == "__main__":
 
     labels = dataset[:, -1].astype(np.float64)
 
-    norm_dataset = normalize_dataset(dataset[:, features_combination])
-
+    # norm_dataset = normalize_dataset(dataset[:, features_combination])
+    norm_dataset = dataset[:, features_combination].astype(np.float64)
     training_set = norm_dataset[:80]
     training_labels = labels[:80]
     test_set = norm_dataset[-20:]
     test_labels = labels[-20:]
     # Specify training parameters
-    learning_rate = 0.05
+    learning_rate = 0.1
     regularization_term = 0
 
     # Monk database
-    # training_set = normalize_dataset(monk2[:345, [0, 1]])
+    # training_set = monk2[:345, features_combination]
     # training_labels = monk2[:345, -1]
-    # test_set = monk2[345:, [0, 1]]
+    # test_set = monk2[345:, features_combination]
     # test_labels = monk2[345:, -1]
 
-    # learning_rate_experiments()
+    learning_rate_experiments()
     # Initiate Model
     logistic_regression = LogisticRegression(training_set=training_set,
                                              labels=training_labels,
@@ -250,8 +262,8 @@ if __name__ == "__main__":
                                              regularization_term=regularization_term)
 
     logistic_regression.train_network(epochs=10000)
+    plot_cost_history([learning_rate], [logistic_regression.cost_history])
     test_pred = logistic_regression.test_network(test_set)
     print("Prediction Accuracy {0}%".format(get_accuracy(test_labels, test_pred) * 100))
-
 
     plot_decision_boundary(training_set, training_labels, logistic_regression.test_network)
