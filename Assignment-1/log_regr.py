@@ -129,7 +129,7 @@ if __name__ == "__main__":
     dataset = pd.read_csv('https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data',
                           header=None).values
 
-    monk2 = scipy.io.loadmat('monk2.mat')['monk2']
+    monk2 = scipy.io.loadmat('Assignment-1/monk2.mat')['monk2']
 
     for row in dataset:
         if row[4] == 'Iris-setosa':
