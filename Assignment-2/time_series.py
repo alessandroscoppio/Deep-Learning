@@ -17,12 +17,9 @@ def plot_series(timesteps, values, title):
 def prepare_data(data, window_size):
     batches = []
     labels = []
-    for idx in range(len(data)):
-        if idx % 50 == 0:
-            batch = data[:idx]
-            label = data[idx]
-            batches.append(batch)
-            labels.append(label)
+    for idx in range(len(data) - window_size - 1):
+        batches.append(data[idx: idx + window_size])
+        labels.append(data[idx + window_size])
     return np.asarray(batches), np.asarray(labels)
 
 
