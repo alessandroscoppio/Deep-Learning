@@ -4,7 +4,7 @@ from keras.models import Sequential
 from keras.layers import Dense
 import scipy.io
 import matplotlib.pyplot as plt
-
+from models import *
 
 def plot_series(timesteps, values, title):
     x = range(timesteps)
@@ -31,6 +31,9 @@ plot_series(1000, series, 'Original Data')
 # define window size
 window_size = 50
 
+# define epochs
+epochs = 2000
+
 # apply window size to construct a batches of training data and expected prediction in labels
 batches, labels = prepare_data(series, window_size)
 
@@ -39,16 +42,11 @@ batches = batches[:, :, 0]
 X = batches[:-1]
 y = labels[:-1]
 
-
 # define model
-model = Sequential()
-model.add(Dense(100, activation='relu', input_dim=(window_size)))
-model.add(Dense(1))
-model.compile(optimizer='adam', loss='mse')
-# fit model
-model.fit(X, y, epochs=1000, verbose=1)
-# demonstrate prediction
-x_input = batches[-1]
-x_input = x_input.reshape((1, window_size))
-prediction = model.predict(x_input, verbose=1)
-print("Predicted: ", prediction, "    Expected: ", labels[-1])
+MLP_model = MLPModel(window_size)
+
+# train
+MLP_model.fit(X, y, epochs)
+
+# predict
+MLP_model.predict(batches[-1], labels[-1])
