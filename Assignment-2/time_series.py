@@ -37,6 +37,17 @@ epochs = 2000
 # apply window size to construct a batches of training data and expected prediction in labels
 batches, labels = prepare_data(series, window_size)
 
+"""
+CNN Model
+"""
+
+# Model
+model = CNNModel()
+# Fit model with all data except last one
+model.fit(batches[:-1], labels[:-1])
+# Use last one to predict
+model.predict(batches[-1], labels[-1])
+
 # use as input all batches but the last one, to use as test
 batches = batches[:, :, 0]
 X = batches[:-1]
