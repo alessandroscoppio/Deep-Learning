@@ -53,7 +53,7 @@ series = np.array(scipy.io.loadmat('Xtrain.mat')['Xtrain'])
 window_size = 50
 
 # define epochs
-epochs = 400
+epochs = 1000
 
 # apply window size to construct a batches of training data and expected prediction in labels
 batches, labels = prepare_data(series, window_size)
@@ -71,22 +71,27 @@ train_labels = labels
 # initiate Models
 model_mlp = MLPModel(window_size)
 model_cnn = CNNModel(window_size)
+model_lstm = LSTMModel(window_size)
 
 # load models
-model_mlp.load_model('saved-models/mlp_400.h5')
-model_cnn.load_model('saved-models/cnn_400.h5')
+# model_mlp.load_model('saved-models/mlp_400.h5')
+# model_cnn.load_model('saved-models/cnn_400.h5')
+model_lstm.load_model('saved-models/lstm_800.h5')
 
 # print overview of models
 # model_mlp.model.summary()
 # model_cnn.model.summary()
+# model_lstm.model.summary()
 
 # train models
 # model_mlp.fit(train_set, train_labels, epochs)
 # model_cnn.fit(train_set, train_labels, epochs)
-#
-# # save models
+model_lstm.fit(train_set, train_labels, epochs, 2)
+
+# save models
 # model_mlp.save_model('mlp_{0}.h5'.format(epochs))
 # model_cnn.save_model('cnn_{0}.h5'.format(epochs))
+model_lstm.save_model('lstm_{0}.h5'.format(epochs+800))
 
 # simulate next steps in the series and compare with original
 starting_point_of_prediction = 1000
@@ -95,15 +100,17 @@ length_of_prediction = 400
 # run simulation mode to predict the next values
 predictions_mlp = simulation_mode(series, model_mlp, starting_point_of_prediction, length_of_prediction)
 predictions_cnn = simulation_mode(series, model_cnn, starting_point_of_prediction, length_of_prediction)
+predictions_lstm = simulation_mode(series, model_lstm, starting_point_of_prediction, length_of_prediction)
 
 # plot both original series and simulated predictions
 y1 = series
-y2 = predictions_cnn[-length_of_prediction:]
-y3 = predictions_mlp[-length_of_prediction:]
+y2 = predictions_lstm[-length_of_prediction:]
+# y2 = predictions_cnn[-length_of_prediction:]
+# y3 = predictions_mlp[-length_of_prediction:]
 x = range(starting_point_of_prediction, starting_point_of_prediction + length_of_prediction)
 plt.plot(range(len(series)), y1, label="Original Series", linestyle="solid", color='blue', linewidth=0.5)
 plt.plot(x, y2, label="Simulated CNN", linestyle="dotted", color='red')
-plt.plot(x, y3, label="Simulated MLP", linestyle="dotted", color='green')
+# plt.plot(x, y3, label="Simulated MLP", linestyle="dotted", color='green')
 plt.title("Predicted Values")
 plt.legend()
 plt.show()

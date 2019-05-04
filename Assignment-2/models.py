@@ -1,5 +1,5 @@
 from keras.models import Sequential
-from keras.layers import Dense
+from keras.layers import Dense, LSTM
 from keras.layers import Flatten
 from keras.layers.convolutional import Conv1D
 from keras.layers.convolutional import MaxPooling1D
@@ -16,10 +16,10 @@ class MLPModel:
         self.model.add(Dense(1))
         self.model.compile(optimizer='adam', loss='mse')
 
-    def fit(self, X, y, epochs):
+    def fit(self, X, y, epochs, verbose=0):
         # fit model
         X = X.reshape((X.shape[0], X.shape[1]))
-        self.model.fit(X, y, epochs=epochs, verbose=0)
+        self.model.fit(X, y, epochs=epochs, verbose=verbose)
 
     def predict(self, input):
         # demonstrate prediction
@@ -46,8 +46,8 @@ class CNNModel:
         self.model.add(Dense(1))
         self.model.compile(optimizer='adam', loss='mse')
 
-    def fit(self, X, y, epochs):
-        self.model.fit(X, y, epochs=epochs, verbose=0)
+    def fit(self, X, y, epochs, verbose=0):
+        self.model.fit(X, y, epochs=epochs, verbose=verbose)
 
     def predict(self, x):
         x_input = x.reshape((1, self.input_size, 1))
@@ -66,18 +66,17 @@ class LSTMModel:
         # define model
         self.input_size = input_size
         self.model = Sequential()
-        self.model.add(Dense(100, activation='relu', input_dim=self.input_size))
+        self.model.add(LSTM(50, activation='relu', input_shape=(self.input_size, 1)))
         self.model.add(Dense(1))
         self.model.compile(optimizer='adam', loss='mse')
 
-    def fit(self, X, y, epochs):
+    def fit(self, X, y, epochs, verbose=0):
         # fit model
-        X = X.reshape((X.shape[0], X.shape[1]))
-        self.model.fit(X, y, epochs=epochs, verbose=0)
+        self.model.fit(X, y, epochs=epochs, verbose=verbose)
 
     def predict(self, input):
         # demonstrate prediction
-        x_input = input.reshape((1, self.input_size))
+        x_input = input.reshape((1, self.input_size, 1))
         prediction = self.model.predict(x_input, verbose=0)
         return prediction
 
