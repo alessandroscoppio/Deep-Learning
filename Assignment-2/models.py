@@ -11,6 +11,7 @@ class MLPModel:
         # define model
         self.input_size = input_size
         self.model = Sequential()
+        # self.model.add(Dense(100, activation='relu', input_shape=(self.input_size, 1)))
         self.model.add(Dense(100, activation='relu', input_dim=self.input_size))
         self.model.add(Dense(1))
         self.model.compile(optimizer='adam', loss='mse')
@@ -29,12 +30,16 @@ class MLPModel:
     def save_model(self, name):
         self.model.save('saved-models/' + name)
 
+    def load_model(self, name):
+        self.model = load_model(name)
+
 
 class CNNModel:
     def __init__(self, input_size):
         self.input_size = input_size
         self.model = Sequential()
-        self.model.add(Conv1D(filters=64, kernel_size=2, activation='relu', input_shape=(self.input_size, 1)))
+        # self.model.add(Conv1D(filters=64, kernel_size=2, activation='relu', input_shape=(self.input_size, 1)))
+        self.model.add(Conv1D(filters=64, kernel_size=2, activation='relu', batch_input_shape=(None, self.input_size, 1)))
         self.model.add(MaxPooling1D(pool_size=2))
         self.model.add(Flatten())
         self.model.add(Dense(50, activation='relu'))
@@ -51,6 +56,9 @@ class CNNModel:
 
     def save_model(self, name):
         self.model.save('saved-models/' + name)
+
+    def load_model(self, name):
+        self.model = load_model(name)
 
 
 class LSTMModel:
@@ -75,3 +83,7 @@ class LSTMModel:
 
     def save_model(self, name):
         self.model.save('saved-models/' + name)
+
+    def load_model(self, name):
+        self.model = load_model(name)
+
