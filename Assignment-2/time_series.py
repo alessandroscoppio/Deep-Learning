@@ -93,11 +93,12 @@ predictions_mlp = simulation_mode(series, model_mlp, starting_point_of_predictio
 
 # Plot both original series and simulated predictions
 y1 = series
-y2 = predictions_cnn
-y3 = predictions_mlp
-plt.plot(range(len(series)), y1, label="Original Series", linestyle="dotted", color='blue')
-plt.plot(range(len(predictions_cnn)), y2, label="Simulated CNN", linestyle="dotted", color='red')
-plt.plot(range(len(predictions_mlp)), y3, label="Simulated MLP", linestyle="dotted", color='green')
+y2 = predictions_cnn[-length_of_prediction:]
+y3 = predictions_mlp[-length_of_prediction:]
+x = range(starting_point_of_prediction, starting_point_of_prediction + length_of_prediction)
+plt.plot(range(len(series)), y1, label="Original Series", linestyle="solid", color='blue')
+plt.plot(x, y2, label="Simulated CNN", linestyle="dotted", color='red')
+plt.plot(x, y3, label="Simulated MLP", linestyle="dotted", color='green')
 plt.title("Predicted Values")
 plt.legend()
 plt.show()
