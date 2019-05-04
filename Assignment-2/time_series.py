@@ -46,13 +46,13 @@ def simulation_mode(data, model, position_to_start_predicting, length_of_predict
 # define dataset
 series = np.array(scipy.io.loadmat('Xtrain.mat')['Xtrain'])
 # plot training set
-# plot_series(1000, series, 'Original Data')
+plot_series(1000, series, 'Original Data')
 
 # define window size
 window_size = 50
 
 # define epochs
-epochs = 200
+epochs = 300
 
 # apply window size to construct a batches of training data and expected prediction in labels
 batches, labels = prepare_data(series, window_size)
@@ -62,36 +62,31 @@ batches, labels = prepare_data(series, window_size)
 # X = batches[:-1]
 # y = labels[:-1]
 
-# # Multi-Layer Perceptron Model
-# MLP_model = MLPModel(window_size)
-#
-# # train
-# MLP_model.fit(X, y, epochs)
-#
-# # # predict
-# prediction = MLP_model.predict(batches[-1])
-# print("Predicted: {0}\nExpecred:  {1}".format(prediction, labels[-1]))
-
-# Choose training data
+# choose training data
 train_set = batches
 train_labels = labels
 
-# Initiate Models
+# initiate Models
 model_mlp = MLPModel(window_size)
-model_mlp.fit(train_set, train_labels, epochs)
 model_cnn = CNNModel(window_size)
+
+# train models
+model_mlp.fit(train_set, train_labels, epochs)
 model_cnn.fit(train_set, train_labels, epochs)
 
+# save models
+model_mlp.save_model('mlp_{0}.h5'.format(epochs))
+model_cnn.save_model('cnn_{0}.h5'.format(epochs))
 
 # simulate next steps in the series and compare with original
 starting_point_of_prediction = 1000
 length_of_prediction = 200
 
-# Run simulation mode to predict the next values
+# run simulation mode to predict the next values
 predictions_cnn = simulation_mode(series, model_cnn, starting_point_of_prediction, length_of_prediction)
 predictions_mlp = simulation_mode(series, model_mlp, starting_point_of_prediction, length_of_prediction)
 
-# Plot both original series and simulated predictions
+# plot both original series and simulated predictions
 y1 = series
 y2 = predictions_cnn[-length_of_prediction:]
 y3 = predictions_mlp[-length_of_prediction:]
