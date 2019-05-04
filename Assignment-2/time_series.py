@@ -52,7 +52,7 @@ series = np.array(scipy.io.loadmat('Xtrain.mat')['Xtrain'])
 window_size = 50
 
 # define epochs
-epochs = 1000
+epochs = 200
 
 # apply window size to construct a batches of training data and expected prediction in labels
 batches, labels = prepare_data(series, window_size)
@@ -76,22 +76,28 @@ batches, labels = prepare_data(series, window_size)
 train_set = batches
 train_labels = labels
 
-# Choose a model
-model = CNNModel(window_size)
-model.fit(train_set, train_labels, epochs)
+# Initiate Models
+model_mlp = MLPModel(window_size)
+model_mlp.fit(train_set, train_labels, epochs)
+model_cnn = CNNModel(window_size)
+model_cnn.fit(train_set, train_labels, epochs)
+
 
 # simulate next steps in the series and compare with original
 starting_point_of_prediction = 1000
 length_of_prediction = 200
 
 # Run simulation mode to predict the next values
-predictions = simulation_mode(series, model, starting_point_of_prediction, length_of_prediction)
+predictions_cnn = simulation_mode(series, model_cnn, starting_point_of_prediction, length_of_prediction)
+predictions_mlp = simulation_mode(series, model_mlp, starting_point_of_prediction, length_of_prediction)
 
 # Plot both original series and simulated predictions
 y1 = series
-y2 = predictions
-plt.plot(range(len(series)), y1, label="Original Series", linestyle="dotted")
-plt.plot(range(len(predictions)), y2, label="Simulated Predictions", linestyle="dotted")
+y2 = predictions_cnn
+y3 = predictions_mlp
+plt.plot(range(len(series)), y1, label="Original Series", linestyle="dotted", color='blue')
+plt.plot(range(len(predictions_cnn)), y2, label="Simulated CNN", linestyle="dotted", color='red')
+plt.plot(range(len(predictions_mlp)), y3, label="Simulated MLP", linestyle="dotted", color='green')
 plt.title("Predicted Values")
 plt.legend()
 plt.show()
