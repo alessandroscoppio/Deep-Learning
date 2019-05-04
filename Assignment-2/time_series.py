@@ -1,7 +1,4 @@
-# univariate mlp example
 import numpy as np
-from keras.models import Sequential
-from keras.layers import Dense
 import scipy.io
 import matplotlib.pyplot as plt
 from models import *
@@ -24,18 +21,26 @@ def prepare_data(data, window_size):
     return np.array(batches), np.array(labels)
 
 
-def simulation_mode(original_input, model, steps):
-    input = original_input
-    predictions = []
-    for step in range(steps):
-        prediction = model.predict(input).round()
-        predictions.append(prediction)
-        new_input = np.zeros((len(input), 1))
-        new_input[:-1] = input[1:]
-        new_input[-1] = prediction
-        input = new_input
+def simulation_mode(data, model, position_to_start_predicting, length_of_prediction):
+    dataset_length = len(data)
 
-    return np.array(predictions)
+    if dataset_length > position_to_start_predicting:
+        prediction_data = np.zeros(data.shape)
+        prediction_data[:position_to_start_predicting - 1] = data[:position_to_start_predicting - 1]
+    else:
+        prediction_data = np.zeros((dataset_length+length_of_prediction, 1))
+        prediction_data[:dataset_length] = data
+
+    for idx in range(position_to_start_predicting, position_to_start_predicting + length_of_prediction):
+        input = prediction_data[idx-50:idx]
+
+        # Predict
+        prediction = model.predict(input).round()
+
+        # append prediction to prediction_data
+        prediction_data[idx] = prediction
+
+    return prediction_data
 
 
 # define dataset
@@ -47,23 +52,10 @@ series = np.array(scipy.io.loadmat('Xtrain.mat')['Xtrain'])
 window_size = 50
 
 # define epochs
-epochs = 2000
+epochs = 1000
 
 # apply window size to construct a batches of training data and expected prediction in labels
 batches, labels = prepare_data(series, window_size)
-
-"""
-CNN Model
-"""
-
-# Model
-# model = CNNModel(window_size)
-# Fit model with all data except last one
-# model.fit(batches[:-1], labels[:-1], epochs)
-# Use last one to predict
-# prediction = model.predict(batches[-1])
-# print("Predicted: {0}\nExpecred:  {1}".format(prediction, labels[-1]))
-
 
 # # use as input all batches but the last one, to use as test
 # batches = batches[:, :, 0]
@@ -80,12 +72,26 @@ CNN Model
 # prediction = MLP_model.predict(batches[-1])
 # print("Predicted: {0}\nExpecred:  {1}".format(prediction, labels[-1]))
 
+# Choose training data
+train_set = batches
+train_labels = labels
+
+# Choose a model
+model = CNNModel(window_size)
+model.fit(train_set, train_labels, epochs)
 
 # simulate next steps in the series and compare with original
-steps = 200
-train_set = batches[:-200]
-train_labels = labels[:-200]
-sim_model = CNNModel(window_size)
-sim_model.fit(train_set, train_labels, epochs)
-predictions = simulation_mode(batches[-200], sim_model, steps)
-print(predictions)
+starting_point_of_prediction = 1000
+length_of_prediction = 200
+
+# Run simulation mode to predict the next values
+predictions = simulation_mode(series, model, starting_point_of_prediction, length_of_prediction)
+
+# Plot both original series and simulated predictions
+y1 = series
+y2 = predictions
+plt.plot(range(len(series)), y1, label="Original Series", linestyle="dotted")
+plt.plot(range(len(predictions)), y2, label="Simulated Predictions", linestyle="dotted")
+plt.title("Predicted Values")
+plt.legend()
+plt.show()
