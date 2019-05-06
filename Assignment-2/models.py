@@ -1,5 +1,5 @@
 from keras.models import Sequential
-from keras.layers import Dense, LSTM
+from keras.layers import Dense, LSTM, BatchNormalization, Dropout
 from keras.layers import Flatten
 from keras.layers.convolutional import Conv1D
 from keras.layers.convolutional import MaxPooling1D
@@ -10,6 +10,7 @@ class MLPModel:
     def __init__(self, input_size):
         # define model
         self.input_size = input_size
+        self.history = None
         self.model = Sequential()
         # self.model.add(Dense(100, activation='relu', input_shape=(self.input_size, 1)))
         self.model.add(Dense(100, activation='relu', input_dim=self.input_size))
@@ -19,7 +20,7 @@ class MLPModel:
     def fit(self, X, y, epochs, verbose=0):
         # fit model
         X = X.reshape((X.shape[0], X.shape[1]))
-        self.model.fit(X, y, epochs=epochs, verbose=verbose)
+        self.history = self.model.fit(X, y, batch_size=10, epochs=epochs, verbose=verbose)
 
     def predict(self, input):
         # demonstrate prediction
@@ -37,6 +38,7 @@ class MLPModel:
 class CNNModel:
     def __init__(self, input_size):
         self.input_size = input_size
+        self.history = None
         self.model = Sequential()
         # self.model.add(Conv1D(filters=64, kernel_size=2, activation='relu', input_shape=(self.input_size, 1)))
         self.model.add(Conv1D(filters=64, kernel_size=2, activation='relu', batch_input_shape=(None, self.input_size, 1)))
@@ -47,7 +49,7 @@ class CNNModel:
         self.model.compile(optimizer='adam', loss='mse')
 
     def fit(self, X, y, epochs, verbose=0):
-        self.model.fit(X, y, epochs=epochs, verbose=verbose)
+        self.history = self.model.fit(X, y, epochs=epochs, verbose=verbose)
 
     def predict(self, x):
         x_input = x.reshape((1, self.input_size, 1))
@@ -65,14 +67,17 @@ class LSTMModel:
     def __init__(self, input_size):
         # define model
         self.input_size = input_size
+        self.history = None
         self.model = Sequential()
         self.model.add(LSTM(50, activation='relu', input_shape=(self.input_size, 1)))
+        # self.model.add(Dropout(0.5))
+        # self.model.add(BatchNormalization())
         self.model.add(Dense(1))
         self.model.compile(optimizer='adam', loss='mse')
 
     def fit(self, X, y, epochs, verbose=0):
         # fit model
-        self.model.fit(X, y, epochs=epochs, verbose=verbose)
+        self.history = self.model.fit(X, y, epochs=epochs, verbose=verbose)
 
     def predict(self, input):
         # demonstrate prediction
