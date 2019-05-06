@@ -87,6 +87,58 @@ def plot_all_models():
     plt.show()
 
 
+def plot_multiple_models(models, predictions, titles, starting_point_of_prediction, length_of_prediction):
+    rows = 4
+    columns = int(len(models)/rows)
+
+    figure = plt.figure(1)
+    x_axis = range(starting_point_of_prediction, starting_point_of_prediction + length_of_prediction)
+    for idx in range(len(models)):
+        figure.add_subplot(rows, columns, idx + 1)
+        plt.plot(x_axis, predictions[idx][-length_of_prediction:], linestyle="solid", color='blue')
+        plt.title(titles[idx])
+
+    figure.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=None, hspace=1.0)
+    plt.show()
+
+
+def experiment_2():
+    # Experiment with these values and their combinations
+    window_sizes = [10, 50, 100, 400]
+    batch_sizes = [1, 32, 256]
+
+    # Store all variables in lists
+    models = []
+    predictions = []
+    titles = []
+
+    network_all = len(window_sizes) * len(batch_sizes)
+    network_count = 1
+
+    # Iterate over all combinations
+    for win_size in window_sizes:
+        training_set, training_labels = prepare_data(series, win_size)
+        for bat_size in batch_sizes:
+            title = "Window size of {0} and batch size of {1}".format(win_size, bat_size)
+            print("Training {0}/{1}: {2}".format(network_count, network_all, title))
+            model = CNNModel(win_size)
+            model.fit(training_set, training_labels, epochs=200, verbose=0, batch_size=bat_size)
+            prediction = simulation_mode(
+                data=series,
+                model=model,
+                window_size=win_size,
+                position_to_start_predicting=1000,
+                length_of_prediction=200
+            )
+            models.append(model)
+            predictions.append(prediction)
+            titles.append(title)
+
+            network_count += 1
+
+    plot_multiple_models(models, predictions, titles, starting_point_of_prediction=100, length_of_prediction=200)
+
+
 # define dataset
 series = np.array(scipy.io.loadmat('Xtrain.mat')['Xtrain'])
 
@@ -108,7 +160,6 @@ batches, labels = prepare_data(series, window_size)
 # y = labels[:-1]
 
 # choose training data
-# train_set = batches[:, :, 0]
 train_set = batches
 train_labels = labels
 
@@ -148,3 +199,6 @@ predictions_lstm = simulation_mode(series, model_lstm, window_size, starting_poi
 
 # plot both original series and simulated predictions
 plot_all_models()
+
+# Run experiments
+# experiment_2()

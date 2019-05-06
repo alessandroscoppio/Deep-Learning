@@ -48,8 +48,8 @@ class CNNModel:
         self.model.add(Dense(1))
         self.model.compile(optimizer='adam', loss='mse')
 
-    def fit(self, X, y, epochs, verbose=0):
-        self.history = self.model.fit(X, y, epochs=epochs, verbose=verbose)
+    def fit(self, X, y, epochs, verbose=0, batch_size=32):
+        self.history = self.model.fit(X, y, batch_size=batch_size, epochs=epochs, verbose=verbose)
 
     def predict(self, x):
         x_input = x.reshape((1, self.input_size, 1))
