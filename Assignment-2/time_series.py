@@ -21,7 +21,7 @@ def prepare_data(data, window_size):
     return np.array(batches), np.array(labels)
 
 
-def simulation_mode(data, model, position_to_start_predicting, length_of_prediction):
+def simulation_mode(data, model, window_size, position_to_start_predicting, length_of_prediction):
     dataset_length = len(data)
 
     if dataset_length > position_to_start_predicting:
@@ -32,7 +32,7 @@ def simulation_mode(data, model, position_to_start_predicting, length_of_predict
         prediction_data[:dataset_length] = data
 
     for idx in range(position_to_start_predicting, position_to_start_predicting + length_of_prediction):
-        input = prediction_data[idx - 50:idx]
+        input = prediction_data[idx - window_size:idx]
 
         # Predict
         prediction = model.predict(input).round()
@@ -94,7 +94,7 @@ series = np.array(scipy.io.loadmat('Xtrain.mat')['Xtrain'])
 # plot_series(1000, series, 'Original Data')
 
 # define window size
-window_size = 150
+window_size = 50
 
 # define epochs
 epochs = 300
@@ -130,7 +130,7 @@ model_lstm = LSTMModel(window_size)
 # train models
 model_mlp.fit(train_set, train_labels, epochs, 2)
 model_cnn.fit(train_set, train_labels, epochs, 2)
-model_lstm.fit(train_set, train_labels, epochs, 0)
+model_lstm.fit(train_set, train_labels, epochs, 2)
 
 # save models
 model_mlp.save_model('mlp_{0}.h5'.format(epochs))
@@ -139,12 +139,12 @@ model_lstm.save_model('lstm_{0}.h5'.format(epochs))
 
 # simulate next steps in the series and compare with original
 starting_point_of_prediction = 1000
-length_of_prediction = 400
+length_of_prediction = 200
 
 # run simulation mode to predict the next values
-predictions_mlp = simulation_mode(series, model_mlp, starting_point_of_prediction, length_of_prediction)
-predictions_cnn = simulation_mode(series, model_cnn, starting_point_of_prediction, length_of_prediction)
-predictions_lstm = simulation_mode(series, model_lstm, starting_point_of_prediction, length_of_prediction)
+predictions_mlp = simulation_mode(series, model_mlp, window_size, starting_point_of_prediction, length_of_prediction)
+predictions_cnn = simulation_mode(series, model_cnn, window_size, starting_point_of_prediction, length_of_prediction)
+predictions_lstm = simulation_mode(series, model_lstm, window_size, starting_point_of_prediction, length_of_prediction)
 
 # plot both original series and simulated predictions
 plot_all_models()
