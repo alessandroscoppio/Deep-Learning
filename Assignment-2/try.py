@@ -85,3 +85,9 @@ yhat = model.predict(x_input, verbose=2)
 print("prediction: ", yhat)
 print("real: ", labels[-1])
 print("real scaled: ", scaler.inverse_transform(labels[-1]))
+
+x = range(1000, 1200)
+y2 = predictions_lstm[-200:]
+plt.plot(x, y4, linestyle="solid", color='black')
+plt.title("Predicted MLP")
+plt.show

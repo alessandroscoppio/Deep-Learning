@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.io
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import MinMaxScaler
 from models import *
 
 
@@ -12,12 +13,23 @@ def plot_series(timesteps, values, title):
     plt.show()
 
 
-def prepare_data(data, window_size):
+def prepare_data(data, window_size, two_pred=False, scaler=None):
     batches = []
     labels = []
-    for idx in range(len(data) - window_size - 1):
+    if scaler is not None:
+        # data.reshape((len(data), 1))
+        scaler = scaler.fit(data)
+        print('Min: %f, Max: %f' % (scaler.data_min_, scaler.data_max_))
+        # normalize the dataset and print
+        data = scaler.transform(data)
+
+    for idx in range(len(data) - window_size - 2):
         batches.append(data[idx: idx + window_size])
-        labels.append(data[idx + window_size])
+        if not two_pred:
+            labels.append(data[idx + window_size])
+        else:
+            labels.append([data[idx + window_size], data[idx + window_size + 1]])
+
     return np.array(batches), np.array(labels)
 
 
@@ -31,14 +43,15 @@ def simulation_mode(data, model, window_size, position_to_start_predicting, leng
         prediction_data = np.zeros((dataset_length + length_of_prediction, 1))
         prediction_data[:dataset_length] = data
 
-    for idx in range(position_to_start_predicting, position_to_start_predicting + length_of_prediction):
+    for idx in range(position_to_start_predicting, position_to_start_predicting + length_of_prediction, 2):
         input = prediction_data[idx - window_size:idx]
 
         # Predict
         prediction = model.predict(input).round()
 
         # append prediction to prediction_data
-        prediction_data[idx] = prediction
+        prediction_data[idx] = prediction[0][0][0]
+        prediction_data[idx+1] = prediction[0][1][0]
 
     return prediction_data
 
@@ -88,8 +101,8 @@ def plot_all_models():
 
 
 def plot_multiple_models(models, predictions, titles, starting_point_of_prediction, length_of_prediction):
-    rows = 4
-    columns = int(len(models)/rows)
+    rows = 1
+    columns = 1 #int(len(models)/rows)
 
     figure = plt.figure(1)
     x_axis = range(starting_point_of_prediction, starting_point_of_prediction + length_of_prediction)
@@ -136,7 +149,7 @@ def experiment_2():
 
             network_count += 1
 
-    plot_multiple_models(models, predictions, titles, starting_point_of_prediction=100, length_of_prediction=200)
+    plot_multiple_models(models, predictions, titles, starting_point_of_prediction=1000, length_of_prediction=200)
 
 
 # define dataset
@@ -149,11 +162,13 @@ series = np.array(scipy.io.loadmat('Xtrain.mat')['Xtrain'])
 window_size = 50
 
 # define epochs
-epochs = 300
+epochs = 1000
 
 # apply window size to construct a batches of training data and expected prediction in labels
-batches, labels = prepare_data(series, window_size)
+scaler = MinMaxScaler(feature_range=(0, 1))
 
+batches, labels = prepare_data(series, window_size)
+fancy_batches, fancy_labels = prepare_data(series, window_size, two_pred=True, scaler=scaler)
 # # use as input all batches but the last one, to use as test
 # batches = batches[:, :, 0]
 # X = batches[:-1]
@@ -164,41 +179,47 @@ train_set = batches
 train_labels = labels
 
 # initiate Models
-model_mlp = MLPModel(window_size)
-model_cnn = CNNModel(window_size)
+# model_mlp = MLPModel(window_size)
+# model_cnn = CNNModel(window_size)
 model_lstm = LSTMModel(window_size)
+model_fancy = AELSTMMSModel(window_size)
 
 # load models
 # model_mlp.load_model('saved-models/mlp_1000.h5')
 # model_cnn.load_model('saved-models/cnn_1000.h5')
 # model_lstm.load_model('saved-models/lstm_1000.h5')
+# model_fancy.load_model('saved-models/fancy_100.h5')
 
 # print overview of models
 # model_mlp.model.summary()
 # model_cnn.model.summary()
 # model_lstm.model.summary()
+# model_fancy.model.summary()
 
 # train models
-model_mlp.fit(train_set, train_labels, epochs, 2)
-model_cnn.fit(train_set, train_labels, epochs, 2)
-model_lstm.fit(train_set, train_labels, epochs, 2)
+# model_mlp.fit(train_set, train_labels, epochs, 2)
+# model_cnn.fit(train_set, train_labels, epochs, 2)
+# model_lstm.fit(train_set, train_labels, epochs, 2)
+model_fancy.fit(fancy_batches, fancy_labels, epochs, 2)
 
 # save models
-model_mlp.save_model('mlp_{0}.h5'.format(epochs))
-model_cnn.save_model('cnn_{0}.h5'.format(epochs))
-model_lstm.save_model('lstm_{0}.h5'.format(epochs))
+# model_mlp.save_model('mlp_{0}.h5'.format(epochs))
+# model_cnn.save_model('cnn_{0}.h5'.format(epochs))
+# model_lstm.save_model('lstm_{0}.h5'.format(epochs))
+model_fancy.save_model('fancy_{0}.h5'.format(epochs))
 
 # simulate next steps in the series and compare with original
 starting_point_of_prediction = 1000
 length_of_prediction = 200
 
 # run simulation mode to predict the next values
-predictions_mlp = simulation_mode(series, model_mlp, window_size, starting_point_of_prediction, length_of_prediction)
-predictions_cnn = simulation_mode(series, model_cnn, window_size, starting_point_of_prediction, length_of_prediction)
-predictions_lstm = simulation_mode(series, model_lstm, window_size, starting_point_of_prediction, length_of_prediction)
+# predictions_mlp = simulation_mode(series, model_mlp, window_size, starting_point_of_prediction, length_of_prediction)
+# predictions_cnn = simulation_mode(series, model_cnn, window_size, starting_point_of_prediction, length_of_prediction)
+# predictions_lstm = simulation_mode(series, model_lstm, window_size, starting_point_of_prediction, length_of_prediction)
+predictions_fancy = simulation_mode(series, model_fancy, window_size, starting_point_of_prediction, length_of_prediction)
 
 # plot both original series and simulated predictions
-plot_all_models()
-
+# plot_all_models()
+plot_multiple_models([model_fancy], [predictions_fancy], ["fancy"], starting_point_of_prediction=1000, length_of_prediction=200)
 # Run experiments
 # experiment_2()
