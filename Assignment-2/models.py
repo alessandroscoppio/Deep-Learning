@@ -75,9 +75,9 @@ class LSTMModel:
         self.model.add(Dense(1))
         self.model.compile(optimizer='adam', loss='mse')
 
-    def fit(self, X, y, epochs, verbose=0):
+    def fit(self, X, y, epochs, verbose=0, batch_size=32):
         # fit model
-        self.history = self.model.fit(X, y, epochs=epochs, verbose=verbose)
+        self.history = self.model.fit(X, y, epochs=epochs, verbose=verbose, batch_size=batch_size)
 
     def predict(self, input):
         # demonstrate prediction

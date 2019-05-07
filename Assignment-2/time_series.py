@@ -1,6 +1,8 @@
 import numpy as np
 import scipy.io
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import MinMaxScaler
+
 from models import *
 
 
@@ -35,7 +37,7 @@ def simulation_mode(data, model, window_size, position_to_start_predicting, leng
         input = prediction_data[idx - window_size:idx]
 
         # Predict
-        prediction = model.predict(input).round()
+        prediction = model.predict(input)
 
         # append prediction to prediction_data
         prediction_data[idx] = prediction
@@ -53,19 +55,19 @@ def plot_all_models():
     y5 = predictions_cnnlstm[-length_of_prediction:]
     x = range(starting_point_of_prediction, starting_point_of_prediction + length_of_prediction)
 
-    figure.add_subplot(2, 4, 1)
+    figure.add_subplot(2, 2, 1)
     plt.plot(range(len(series)), y1, label="Original Series", linestyle="solid", color='blue', linewidth=0.5)
     plt.title('Original Series')
 
-    figure.add_subplot(2, 4, 2)
+    figure.add_subplot(2, 2, 2)
     plt.plot(x, y2, label="Simulated CNN", linestyle="solid", color='red')
     plt.title('Predicted LSTM')
 
-    figure.add_subplot(2, 4, 3)
+    figure.add_subplot(2, 2, 3)
     plt.plot(x, y3, linestyle="solid", color='green')
     plt.title("Predicted CNN")
 
-    figure.add_subplot(2, 4, 4)
+    figure.add_subplot(2, 2, 4)
     plt.plot(x, y4, linestyle="solid", color='black')
     plt.title("Predicted MLP")
 
@@ -74,42 +76,38 @@ def plot_all_models():
     plt.title("Predicted CNNLSTM")
 
     # Print losses. Only after training, not with loaded models
-    if model_lstm.history:
-        figure.add_subplot(2, 4, 6)
-        plt.plot(model_lstm.history.history['loss'])
-        plt.title("LSTM Loss"), plt.ylabel('loss'), plt.xlabel('epoch')
-
-    if model_cnn.history:
-        figure.add_subplot(2, 4, 7)
-        plt.plot(model_cnn.history.history['loss'])
-        plt.title("CNN Loss"), plt.ylabel('loss'), plt.xlabel('epoch')
-
-    if model_mlp.history:
-        figure.add_subplot(2, 4, 8)
-        plt.plot(model_mlp.history.history['loss'])
-        plt.title("MLP Loss"), plt.ylabel('loss'), plt.xlabel('epoch')
+    # if model_lstm.history:
+    #     figure.add_subplot(2, 4, 6)
+    #     plt.plot(model_lstm.history.history['loss'])
+    #     plt.title("LSTM Loss"), plt.ylabel('loss'), plt.xlabel('epoch')
+    #
+    # if model_cnn.history:
+    #     figure.add_subplot(2, 4, 7)
+    #     plt.plot(model_cnn.history.history['loss'])
+    #     plt.title("CNN Loss"), plt.ylabel('loss'), plt.xlabel('epoch')
+    #
+    # if model_mlp.history:
+    #     figure.add_subplot(2, 4, 8)
+    #     plt.plot(model_mlp.history.history['loss'])
+    #     plt.title("MLP Loss"), plt.ylabel('loss'), plt.xlabel('epoch')
 
     plt.show()
 
 
-def plot_multiple_models(models, predictions, titles, starting_point_of_prediction, length_of_prediction):
-    rows = 1  # 4
-    columns = 1  # int(len(models)/rows)
-
+def plot_multiple_models(models, predictions, titles, rows, columns):
     figure = plt.figure(1)
-    x_axis = range(starting_point_of_prediction, starting_point_of_prediction + length_of_prediction)
     for idx in range(len(models)):
         figure.add_subplot(rows, columns, idx + 1)
-        plt.plot(x_axis, predictions[idx][-length_of_prediction:], linestyle="solid", color='blue')
+        plt.plot(predictions[idx], linewidth=0.5, linestyle="solid", color='blue')
         plt.title(titles[idx])
 
-    figure.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=None, hspace=1.0)
+    figure.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=None, hspace=0.5)
     plt.show()
 
 
 def experiment_2():
     # Experiment with these values and their combinations
-    window_sizes = [10, 50, 100, 400]
+    window_sizes = [10, 50, 100, 450]
     batch_sizes = [1, 32, 256]
 
     # Store all variables in lists
@@ -127,7 +125,7 @@ def experiment_2():
             title = "Window size of {0} and batch size of {1}".format(win_size, bat_size)
             print("Training {0}/{1}: {2}".format(network_count, network_all, title))
             model = CNNModel(win_size)
-            model.fit(training_set, training_labels, epochs=200, verbose=0, batch_size=bat_size)
+            model.fit(training_set, training_labels, epochs=300, verbose=0, batch_size=bat_size)
             prediction = simulation_mode(
                 data=series,
                 model=model,
@@ -141,7 +139,55 @@ def experiment_2():
 
             network_count += 1
 
-    plot_multiple_models(models, predictions, titles, starting_point_of_prediction=100, length_of_prediction=200)
+    plot_multiple_models(models, predictions, titles, 4, 3)
+
+
+def experiment_normalization():
+    scaler = MinMaxScaler(feature_range=(0, 1))
+    scaler.fit(series)
+    series_n = scaler.transform(series)
+
+    batches_n, labels_n = prepare_data(series_n, window_size)
+    batches, labels = prepare_data(series, window_size)
+
+    model_cnn_n = CNNModel(window_size)
+    model_cnn_n.fit(batches_n, labels_n, epochs, 2)
+    model_cnn = CNNModel(window_size)
+    model_cnn.fit(batches, labels, epochs, 2)
+
+    model_mlp_n = MLPModel(window_size)
+    model_mlp_n.fit(batches_n, labels_n, epochs, 2)
+    model_mlp = MLPModel(window_size)
+    model_mlp.fit(batches, labels, epochs, 2)
+
+    model_lstm_n = LSTMModel(window_size)
+    model_lstm_n.fit(batches_n, labels_n, epochs, 2)
+    model_lstm = LSTMModel(window_size)
+    model_lstm.fit(batches, labels, epochs, 2)
+
+    predictions_cnn_n = scaler.inverse_transform(
+        simulation_mode(series_n, model_cnn_n, window_size, starting_point_of_prediction, length_of_prediction))
+    predictions_cnn = simulation_mode(series, model_cnn, window_size, starting_point_of_prediction,
+                                      length_of_prediction)
+
+    predictions_mlp_n = scaler.inverse_transform(
+        simulation_mode(series_n, model_mlp_n, window_size, starting_point_of_prediction, length_of_prediction))
+    predictions_mlp = simulation_mode(series, model_mlp, window_size, starting_point_of_prediction,
+                                      length_of_prediction)
+
+    predictions_lstm_n = scaler.inverse_transform(
+        simulation_mode(series_n, model_lstm_n, window_size, starting_point_of_prediction, length_of_prediction))
+    predictions_lstm = simulation_mode(series, model_lstm, window_size, starting_point_of_prediction,
+                                       length_of_prediction)
+
+    plot_multiple_models(
+        [model_cnn_n, model_mlp_n, model_lstm_n, model_cnn, model_mlp, model_lstm],
+        [predictions_cnn_n, predictions_mlp_n, predictions_lstm_n, predictions_cnn, predictions_mlp, predictions_lstm],
+        ["CNN with data normalization", "MLP with data normalization", "LSTM with data normalization",
+         "CNN with original data", "MLP with original data", "LSTM with original data"],
+        2,
+        3
+    )
 
 
 # define dataset
@@ -154,10 +200,12 @@ series = np.array(scipy.io.loadmat('Xtrain.mat')['Xtrain'])
 window_size = 50
 
 # define epochs
-epochs = 1500
+epochs = 500
 
+# scaler = MinMaxScaler(feature_range=(0, 1))
+# scaler.fit(series)
 # apply window size to construct a batches of training data and expected prediction in labels
-batches, labels = prepare_data(series, window_size)
+# batches, labels = prepare_data(series, window_size, scaler=scaler)
 
 # # use as input all batches but the last one, to use as test
 # batches = batches[:, :, 0]
@@ -165,19 +213,19 @@ batches, labels = prepare_data(series, window_size)
 # y = labels[:-1]
 
 # choose training data
-train_set = batches
-train_labels = labels
+# train_set = batches
+# train_labels = labels
 
 # initiate Models
-model_mlp = MLPModel(window_size)
-model_cnn = CNNModel(window_size)
-model_lstm = LSTMModel(window_size)
-model_cnnlstm = CNNLSTMModel(window_size)
+# model_mlp = MLPModel(window_size)
+# model_cnn = CNNModel(window_size)
+# model_lstm = LSTMModel(window_size)
+# model_cnnlstm = CNNLSTMModel(window_size)
 
 # load models
 # model_mlp.load_model('saved-models/mlp_1000.h5')
 # model_cnn.load_model('saved-models/cnn_1000.h5')
-# model_lstm.load_model('saved-models/lstm_1000.h5')
+# model_lstm.load_model('saved-models/lstm_800.h5')
 
 # print overview of models
 # model_mlp.model.summary()
@@ -186,32 +234,34 @@ model_cnnlstm = CNNLSTMModel(window_size)
 # model_cnnlstm.model.summary()
 
 # train models
-model_mlp.fit(train_set, train_labels, epochs, 2)
-model_cnn.fit(train_set, train_labels, epochs, 2)
-model_lstm.fit(train_set, train_labels, epochs, 2)
-model_cnnlstm.fit(train_set, train_labels, epochs, 2)
+# model_mlp.fit(train_set, train_labels, epochs, 2)
+# model_cnn.fit(train_set, train_labels, epochs, 2)
+# model_lstm.fit(train_set, train_labels, epochs, 2)
+# model_cnnlstm.fit(train_set, train_labels, epochs, 2)
 
 # save models
-model_mlp.save_model('mlp_{0}.h5'.format(epochs))
-model_cnn.save_model('cnn_{0}.h5'.format(epochs))
-model_lstm.save_model('lstm_{0}.h5'.format(epochs))
-model_cnnlstm.save_model('cnnlstm_{0}.h5'.format(epochs))
+# model_mlp.save_model('mlp_{0}.h5'.format(epochs))
+# model_cnn.save_model('cnn_{0}.h5'.format(epochs))
+# model_lstm.save_model('lstm_{0}.h5'.format(epochs))
+# model_cnnlstm.save_model('cnnlstm_{0}.h5'.format(epochs))
 
 # simulate next steps in the series and compare with original
 starting_point_of_prediction = 1000
 length_of_prediction = 200
 
 # run simulation mode to predict the next values
-predictions_mlp = simulation_mode(series, model_mlp, window_size, starting_point_of_prediction, length_of_prediction)
-predictions_cnn = simulation_mode(series, model_cnn, window_size, starting_point_of_prediction, length_of_prediction)
-predictions_lstm = simulation_mode(series, model_lstm, window_size, starting_point_of_prediction, length_of_prediction)
-predictions_cnnlstm = simulation_mode(series, model_lstm, window_size, starting_point_of_prediction,
-                                      length_of_prediction)
+# predictions_mlp = simulation_mode(series, model_mlp, window_size, starting_point_of_prediction, length_of_prediction)
+# predictions_cnn = simulation_mode(series, model_cnn, window_size, starting_point_of_prediction, length_of_prediction)
+# predictions_lstm = simulation_mode(series, model_lstm, window_size, starting_point_of_prediction, length_of_prediction)
+# predictions_cnnlstm = simulation_mode(series, model_lstm, window_size, starting_point_of_prediction,
+#                                       length_of_prediction)
 
 # plot both original series and simulated predictions
-plot_all_models()
+# plot_all_models()
 # plot_multiple_models([model_cnnlstm], [predictions_cnnlstm], ["CNNLSTM"],
 #                      starting_point_of_prediction=starting_point_of_prediction,
 #                      length_of_prediction=length_of_prediction)
+
 # Run experiments
 # experiment_2()
+experiment_normalization()
