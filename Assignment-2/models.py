@@ -1,5 +1,5 @@
 from keras.models import Sequential
-from keras.layers import Dense, LSTM, BatchNormalization, Dropout
+from keras.layers import Dense, LSTM, BatchNormalization, Dropout, TimeDistributed
 from keras.layers import Flatten
 from keras.layers.convolutional import Conv1D
 from keras.layers.convolutional import MaxPooling1D
@@ -91,3 +91,32 @@ class LSTMModel:
     def load_model(self, name):
         self.model = load_model(name)
 
+class CNNLSTMModel:
+    def __init__(self, input_size):
+        # define model
+        self.input_size = input_size
+        self.history = None
+        self.model = Sequential()
+        self.model.add(TimeDistributed(Conv1D(filters=64, kernel_size=1, activation='relu'), input_shape=(None, 25, 1)))
+        self.model.add(TimeDistributed(MaxPooling1D(pool_size=2)))
+        self.model.add(TimeDistributed(Flatten()))
+        self.model.add(LSTM(100, activation='relu'))
+        self.model.add(Dense(1))
+        self.model.compile(optimizer='adam', loss='mse')
+
+    def fit(self, X, y, epochs, verbose=0):
+        # fit model
+        X = X.reshape((X.shape[0], 2, 25, 1))
+        self.history = self.model.fit(X, y, epochs=epochs, verbose=verbose)
+
+    def predict(self, input):
+        # demonstrate prediction
+        x_input = input.reshape((1, 2, 25, 1))
+        prediction = self.model.predict(x_input, verbose=0)
+        return prediction
+
+    def save_model(self, name):
+        self.model.save('saved-models/' + name)
+
+    def load_model(self, name):
+        self.model = load_model(name)

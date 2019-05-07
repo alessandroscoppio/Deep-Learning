@@ -50,6 +50,7 @@ def plot_all_models():
     y2 = predictions_lstm[-length_of_prediction:]
     y3 = predictions_cnn[-length_of_prediction:]
     y4 = predictions_mlp[-length_of_prediction:]
+    y5 = predictions_cnnlstm[-length_of_prediction:]
     x = range(starting_point_of_prediction, starting_point_of_prediction + length_of_prediction)
 
     figure.add_subplot(2, 4, 1)
@@ -67,6 +68,10 @@ def plot_all_models():
     figure.add_subplot(2, 4, 4)
     plt.plot(x, y4, linestyle="solid", color='black')
     plt.title("Predicted MLP")
+
+    figure.add_subplot(2, 4, 5)
+    plt.plot(x, y5, linestyle="solid", color='orange')
+    plt.title("Predicted CNNLSTM")
 
     # Print losses. Only after training, not with loaded models
     if model_lstm.history:
@@ -88,8 +93,8 @@ def plot_all_models():
 
 
 def plot_multiple_models(models, predictions, titles, starting_point_of_prediction, length_of_prediction):
-    rows = 4
-    columns = int(len(models)/rows)
+    rows = 1  # 4
+    columns = 1  # int(len(models)/rows)
 
     figure = plt.figure(1)
     x_axis = range(starting_point_of_prediction, starting_point_of_prediction + length_of_prediction)
@@ -149,7 +154,7 @@ series = np.array(scipy.io.loadmat('Xtrain.mat')['Xtrain'])
 window_size = 50
 
 # define epochs
-epochs = 300
+epochs = 1500
 
 # apply window size to construct a batches of training data and expected prediction in labels
 batches, labels = prepare_data(series, window_size)
@@ -167,6 +172,7 @@ train_labels = labels
 model_mlp = MLPModel(window_size)
 model_cnn = CNNModel(window_size)
 model_lstm = LSTMModel(window_size)
+model_cnnlstm = CNNLSTMModel(window_size)
 
 # load models
 # model_mlp.load_model('saved-models/mlp_1000.h5')
@@ -177,16 +183,19 @@ model_lstm = LSTMModel(window_size)
 # model_mlp.model.summary()
 # model_cnn.model.summary()
 # model_lstm.model.summary()
+# model_cnnlstm.model.summary()
 
 # train models
 model_mlp.fit(train_set, train_labels, epochs, 2)
 model_cnn.fit(train_set, train_labels, epochs, 2)
 model_lstm.fit(train_set, train_labels, epochs, 2)
+model_cnnlstm.fit(train_set, train_labels, epochs, 2)
 
 # save models
 model_mlp.save_model('mlp_{0}.h5'.format(epochs))
 model_cnn.save_model('cnn_{0}.h5'.format(epochs))
 model_lstm.save_model('lstm_{0}.h5'.format(epochs))
+model_cnnlstm.save_model('cnnlstm_{0}.h5'.format(epochs))
 
 # simulate next steps in the series and compare with original
 starting_point_of_prediction = 1000
@@ -196,9 +205,13 @@ length_of_prediction = 200
 predictions_mlp = simulation_mode(series, model_mlp, window_size, starting_point_of_prediction, length_of_prediction)
 predictions_cnn = simulation_mode(series, model_cnn, window_size, starting_point_of_prediction, length_of_prediction)
 predictions_lstm = simulation_mode(series, model_lstm, window_size, starting_point_of_prediction, length_of_prediction)
+predictions_cnnlstm = simulation_mode(series, model_lstm, window_size, starting_point_of_prediction,
+                                      length_of_prediction)
 
 # plot both original series and simulated predictions
 plot_all_models()
-
+# plot_multiple_models([model_cnnlstm], [predictions_cnnlstm], ["CNNLSTM"],
+#                      starting_point_of_prediction=starting_point_of_prediction,
+#                      length_of_prediction=length_of_prediction)
 # Run experiments
 # experiment_2()
