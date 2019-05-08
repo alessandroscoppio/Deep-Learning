@@ -1,5 +1,5 @@
 from keras.models import Sequential
-from keras.layers import Dense, LSTM, BatchNormalization, Dropout, TimeDistributed
+from keras.layers import Dense, LSTM, TimeDistributed
 from keras.layers import Flatten
 from keras.layers.convolutional import Conv1D
 from keras.layers.convolutional import MaxPooling1D
@@ -12,7 +12,6 @@ class MLPModel:
         self.input_size = input_size
         self.history = None
         self.model = Sequential()
-        # self.model.add(Dense(100, activation='relu', input_shape=(self.input_size, 1)))
         self.model.add(Dense(100, activation='relu', input_dim=self.input_size))
         self.model.add(Dense(1))
         self.model.compile(optimizer='adam', loss='mse')
@@ -40,7 +39,6 @@ class CNNModel:
         self.input_size = input_size
         self.history = None
         self.model = Sequential()
-        # self.model.add(Conv1D(filters=64, kernel_size=2, activation='relu', input_shape=(self.input_size, 1)))
         self.model.add(Conv1D(filters=64, kernel_size=2, activation='relu', batch_input_shape=(None, self.input_size, 1)))
         self.model.add(MaxPooling1D(pool_size=2))
         self.model.add(Flatten())
@@ -90,6 +88,7 @@ class LSTMModel:
 
     def load_model(self, name):
         self.model = load_model(name)
+
 
 class CNNLSTMModel:
     def __init__(self, input_size):

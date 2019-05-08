@@ -6,14 +6,6 @@ from sklearn.preprocessing import MinMaxScaler
 from models import *
 
 
-def plot_series(timesteps, values, title):
-    x = range(timesteps)
-    y = values
-    plt.plot(x, y)
-    plt.title(title)
-    plt.show()
-
-
 def prepare_data(data, window_size):
     batches = []
     labels = []
@@ -45,55 +37,6 @@ def simulation_mode(data, model, window_size, position_to_start_predicting, leng
     return prediction_data
 
 
-def plot_all_models():
-    figure = plt.figure(1)
-
-    y1 = series
-    y2 = predictions_lstm[-length_of_prediction:]
-    y3 = predictions_cnn[-length_of_prediction:]
-    y4 = predictions_mlp[-length_of_prediction:]
-    y5 = predictions_cnnlstm[-length_of_prediction:]
-    x = range(starting_point_of_prediction, starting_point_of_prediction + length_of_prediction)
-
-    figure.add_subplot(2, 2, 1)
-    plt.plot(range(len(series)), y1, label="Original Series", linestyle="solid", color='blue', linewidth=0.5)
-    plt.title('Original Series')
-
-    figure.add_subplot(2, 2, 2)
-    plt.plot(x, y2, label="Simulated CNN", linestyle="solid", color='red')
-    plt.title('Predicted LSTM')
-
-    figure.add_subplot(2, 2, 3)
-    plt.plot(x, y3, linestyle="solid", color='green')
-    plt.title("Predicted CNN")
-
-    figure.add_subplot(2, 2, 4)
-    plt.plot(x, y4, linestyle="solid", color='black')
-    plt.title("Predicted MLP")
-
-    figure.add_subplot(2, 4, 5)
-    plt.plot(x, y5, linestyle="solid", color='orange')
-    plt.title("Predicted CNNLSTM")
-
-    # Print losses. Only after training, not with loaded models
-    # if model_lstm.history:
-    #     figure.add_subplot(2, 4, 6)
-    #     plt.plot(model_lstm.history.history['loss'])
-    #     plt.title("LSTM Loss"), plt.ylabel('loss'), plt.xlabel('epoch')
-    #
-    # if model_cnn.history:
-    #     figure.add_subplot(2, 4, 7)
-    #     plt.plot(model_cnn.history.history['loss'])
-    #     plt.title("CNN Loss"), plt.ylabel('loss'), plt.xlabel('epoch')
-    #
-    # if model_mlp.history:
-    #     figure.add_subplot(2, 4, 8)
-    #     plt.plot(model_mlp.history.history['loss'])
-    #     plt.title("MLP Loss"), plt.ylabel('loss'), plt.xlabel('epoch')
-
-    plt.show()
-
-
 def plot_multiple_models(models, predictions, titles, rows, columns):
     figure = plt.figure(1)
     for idx in range(len(models)):
@@ -105,7 +48,7 @@ def plot_multiple_models(models, predictions, titles, rows, columns):
     plt.show()
 
 
-def experiment_2():
+def experiment_with_batch_and_window_size():
     # Experiment with these values and their combinations
     window_sizes = [10, 50, 100, 450]
     batch_sizes = [1, 32, 256]
@@ -190,78 +133,48 @@ def experiment_normalization():
     )
 
 
+def run_model(model):
+    # apply window size to construct a batches of training data and expected prediction in labels
+    batches, labels = prepare_data(series, window_size)
+
+    # Load model from memory (if already trained once)
+    # model.load_model('saved-models/cnn_1000.h5')
+
+    # Train model
+    model.fit(batches, labels, epochs, 2)
+
+    # Save model
+    model.save_model('cnn_{0}.h5'.format(epochs))
+
+    # Run simulation model and retrieve predictions
+    predictions = simulation_mode(series, model, window_size, starting_point_of_prediction, length_of_prediction)
+
+    plt.plot(predictions, linewidth=0.5, linestyle="solid", color='blue')
+    plt.show()
+
+
 # define dataset
 series = np.array(scipy.io.loadmat('Xtrain.mat')['Xtrain'])
-
-# plot training set
-# plot_series(1000, series, 'Original Data')
 
 # define window size
 window_size = 50
 
 # define epochs
-epochs = 500
-
-# scaler = MinMaxScaler(feature_range=(0, 1))
-# scaler.fit(series)
-# apply window size to construct a batches of training data and expected prediction in labels
-# batches, labels = prepare_data(series, window_size, scaler=scaler)
-
-# # use as input all batches but the last one, to use as test
-# batches = batches[:, :, 0]
-# X = batches[:-1]
-# y = labels[:-1]
-
-# choose training data
-# train_set = batches
-# train_labels = labels
+epochs = 100
 
 # initiate Models
 # model_mlp = MLPModel(window_size)
-# model_cnn = CNNModel(window_size)
+model_cnn = CNNModel(window_size)
 # model_lstm = LSTMModel(window_size)
 # model_cnnlstm = CNNLSTMModel(window_size)
-
-# load models
-# model_mlp.load_model('saved-models/mlp_1000.h5')
-# model_cnn.load_model('saved-models/cnn_1000.h5')
-# model_lstm.load_model('saved-models/lstm_800.h5')
-
-# print overview of models
-# model_mlp.model.summary()
-# model_cnn.model.summary()
-# model_lstm.model.summary()
-# model_cnnlstm.model.summary()
-
-# train models
-# model_mlp.fit(train_set, train_labels, epochs, 2)
-# model_cnn.fit(train_set, train_labels, epochs, 2)
-# model_lstm.fit(train_set, train_labels, epochs, 2)
-# model_cnnlstm.fit(train_set, train_labels, epochs, 2)
-
-# save models
-# model_mlp.save_model('mlp_{0}.h5'.format(epochs))
-# model_cnn.save_model('cnn_{0}.h5'.format(epochs))
-# model_lstm.save_model('lstm_{0}.h5'.format(epochs))
-# model_cnnlstm.save_model('cnnlstm_{0}.h5'.format(epochs))
 
 # simulate next steps in the series and compare with original
 starting_point_of_prediction = 1000
 length_of_prediction = 200
 
-# run simulation mode to predict the next values
-# predictions_mlp = simulation_mode(series, model_mlp, window_size, starting_point_of_prediction, length_of_prediction)
-# predictions_cnn = simulation_mode(series, model_cnn, window_size, starting_point_of_prediction, length_of_prediction)
-# predictions_lstm = simulation_mode(series, model_lstm, window_size, starting_point_of_prediction, length_of_prediction)
-# predictions_cnnlstm = simulation_mode(series, model_lstm, window_size, starting_point_of_prediction,
-#                                       length_of_prediction)
+# Run any of the models
+run_model(model_cnn)  # Change to any of the other models from above
 
-# plot both original series and simulated predictions
-# plot_all_models()
-# plot_multiple_models([model_cnnlstm], [predictions_cnnlstm], ["CNNLSTM"],
-#                      starting_point_of_prediction=starting_point_of_prediction,
-#                      length_of_prediction=length_of_prediction)
-
-# Run experiments
-# experiment_2()
-experiment_normalization()
+# Run experiments. Uncomment to execute
+# experiment_with_batch_and_window_size()
+# experiment_normalization()
