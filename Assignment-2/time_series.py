@@ -138,23 +138,25 @@ def run_model(model):
     batches, labels = prepare_data(series, window_size)
 
     # Load model from memory (if already trained once)
-    # model.load_model('saved-models/cnn_1000.h5')
+    model.load_model('saved-models/cnn_1000.h5')
 
     # Train model
-    model.fit(batches, labels, epochs, 2)
+    # model.fit(batches, labels, epochs, 2)
 
     # Save model
-    model.save_model('cnn_{0}.h5'.format(epochs))
+    # model.save_model('cnn_{0}.h5'.format(epochs))
 
     # Run simulation model and retrieve predictions
     predictions = simulation_mode(series, model, window_size, starting_point_of_prediction, length_of_prediction)
 
     plt.plot(predictions, linewidth=0.5, linestyle="solid", color='blue')
+    plt.plot(range(1000, 1200), series_test, linewidth=0.5, linestyle="solid", color='red')
     plt.show()
 
 
 # define dataset
 series = np.array(scipy.io.loadmat('Xtrain.mat')['Xtrain'])
+series_test = np.array(scipy.io.loadmat('Xtest.mat')['Xtest'])
 
 # define window size
 window_size = 50
