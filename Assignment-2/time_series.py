@@ -2,6 +2,9 @@ import numpy as np
 import scipy.io
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import r2_score
 
 from models import *
 
@@ -133,12 +136,12 @@ def experiment_normalization():
     )
 
 
-def run_model(model):
+def run_model(model, model_name):
     # apply window size to construct a batches of training data and expected prediction in labels
     batches, labels = prepare_data(series, window_size)
 
     # Load model from memory (if already trained once)
-    model.load_model('saved-models/cnn_1000.h5')
+    model.load_model('saved-models/{0}_1500.h5'.format(model_name))
 
     # Train model
     # model.fit(batches, labels, epochs, 2)
@@ -149,15 +152,31 @@ def run_model(model):
     # Run simulation model and retrieve predictions
     predictions = simulation_mode(series, model, window_size, starting_point_of_prediction, length_of_prediction)
 
+    mse = mean_squared_error(series_test, predictions[-200:])
+    mae = mean_absolute_error(series_test, predictions[-200:])
+    rmse = np.sqrt(mse)
+    r2 = r2_score(series_test, predictions[-200:])
+
+    print("MSE of {0} model: {1}".format(model_name, mse))
+    print("MAE of {0} model: {1}".format(model_name, mae))
+    print("RMAE of {0} model: {1}".format(model_name, rmse))
+    print("R2score of {0} model: {1}".format(model_name, r2))
     plt.plot(predictions, linewidth=0.5, linestyle="solid", color='blue')
     plt.plot(range(1000, 1200), series_test, linewidth=0.5, linestyle="solid", color='red')
+    plt.title(model_name)
     plt.show()
+
 
 
 # define dataset
 series = np.array(scipy.io.loadmat('Xtrain.mat')['Xtrain'])
 series_test = np.array(scipy.io.loadmat('Xtest.mat')['Xtest'])
 
+# scaler = MinMaxScaler(feature_range=(0, 1))
+# scaler.fit(series)
+# series = scaler.transform(series)
+#
+# series_test = scaler.transform(series_test)
 # define window size
 window_size = 50
 
@@ -168,15 +187,19 @@ epochs = 100
 # model_mlp = MLPModel(window_size)
 model_cnn = CNNModel(window_size)
 # model_lstm = LSTMModel(window_size)
-# model_cnnlstm = CNNLSTMModel(window_size)
+model_cnnlstm = CNNLSTMModel(window_size)
 
 # simulate next steps in the series and compare with original
 starting_point_of_prediction = 1000
 length_of_prediction = 200
 
 # Run any of the models
-run_model(model_cnn)  # Change to any of the other models from above
+# run_model(model_mlp, "mlp")  # Change to any of the other models from above
+run_model(model_cnn, "cnn")  # Change to any of the other models from above
+# run_model(model_lstm, "lstm")  # Change to any of the other models from above
+run_model(model_cnnlstm, "cnnlstm")  # Change to any of the other models from above
 
 # Run experiments. Uncomment to execute
 # experiment_with_batch_and_window_size()
 # experiment_normalization()
+
